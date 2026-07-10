@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "mcp__claude-in-chrome__computer",
+      "mcp__claude-in-chrome__browser_batch",
+      "Bash(npm --version)",
+      "Bash(docker --version)",
+      "Bash(where psql *)",
+      "Bash(npx --yes create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack --yes)",
+      "Bash(npx --yes create-next-app@latest carmobility-crm --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack --yes)",
+      "Bash(npm install *)",
+      "Bash(npx --yes shadcn@latest init -d)",
+      "Bash(npm view *)",
+      "Bash(npx prisma *)",
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(32\\).toString\\('base64'\\)\\)\")",
+      "Bash(find 'C:/Users/bacca/OneDrive/VRS/Programação/Projeto Renato/Clone CRM/node_modules/@base-ui/react/menu/trigger' -name *.d.ts)",
+      "Bash(npm run *)",
+      "Bash(DEST=\"C:/Users/bacca/OneDrive/VRS/Programação/Projeto Renato/Clone CRM\" *)",
+      "Bash(node -e ' *)",
+      "mcp__d40c3807-5ee3-4fe9-92e6-dc9865744295__marketplace",
+      "Bash(node -e \"console.log\\(require\\('crypto'\\).randomBytes\\(18\\).toString\\('base64'\\).replace\\(/[^a-zA-Z0-9]/g,''\\).slice\\(0,24\\)\\)\")",
+      "WebFetch(domain:supabase.com)",
+      "Bash(npx tsc *)",
+      "Bash(node prisma/seed-servicos.js)",
+      "Read(//tmp/**)",
+      "Bash(find 'C:/Users/bacca/OneDrive/VRS/Programação/Projeto Renato/Clone CRM/node_modules/@base-ui/react/select' -iname *root*)",
+      "Bash(curl -s --cookie session=__CMDSUB_OUTPUT__ http://localhost:3000/clientes/cmrf8fcba0003nn60bvbhz1w7 -o /tmp/cliente2.html)",
+      "Bash(node C:/Users/bacca/AppData/Local/Temp/claude/C--Users-bacca-OneDrive-VRS-Programa--o-Projeto-Renato-Clone-CRM/14ec5195-bcb4-43d3-adf6-eee30ca72803/scratchpad/make-template.js)"
+    ]
+  }
+}

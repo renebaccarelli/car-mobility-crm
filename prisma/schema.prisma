@@ -1,0 +1,398 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Multi-tenant core: Grupo (tenant raiz) -> Empresa -> Usuario
+// ---------------------------------------------------------------------------
+
+enum TipoPerfil {
+  ADMINISTRADOR
+  GERENTE
+  VENDEDOR
+  COLABORADOR
+  CLIENTE
+}
+
+model Grupo {
+  id        String   @id @default(cuid())
+  nome      String
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  empresas Empresa[]
+
+  @@map("grupos")
+}
+
+model Empresa {
+  id        String   @id @default(cuid())
+  nome      String
+  cnpj      String?
+  marca     String?
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  grupoId String
+  grupo   Grupo  @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+
+  usuarios         Usuario[]
+  clientes         Cliente[]
+  enderecos        Endereco[]
+  servicos         EmpresaServico[]
+  metodosPagamento EmpresaMetodoPagamento[]
+
+  @@map("empresas")
+}
+
+model Usuario {
+  id        String     @id @default(cuid())
+  nome      String
+  email     String     @unique
+  senhaHash String
+  perfil    TipoPerfil @default(COLABORADOR)
+  ativo     Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  empresaId String?
+  empresa   Empresa? @relation(fields: [empresaId], references: [id], onDelete: SetNull)
+
+  clientesCadastrados Cliente[]        @relation("ClienteCadastradoPor")
+  clientesConsultor   Cliente[]        @relation("ClienteConsultor")
+  mensagens           Mensagem[]
+  arquivosEnviados    ArquivoCliente[]
+  lembretes           Lembrete[]
+
+  @@map("usuarios")
+}
+
+model Endereco {
+  id          String  @id @default(cuid())
+  logradouro  String?
+  numero      String?
+  complemento String?
+  bairro      String?
+  municipio   String?
+  estado      String?
+  cep         String?
+
+  empresaId String?
+  empresa   Empresa? @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  clienteId String?  @unique
+  cliente   Cliente? @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@map("enderecos")
+}
+
+// ---------------------------------------------------------------------------
+// Catálogo de serviços
+// ---------------------------------------------------------------------------
+
+enum CategoriaServico {
+  RECOMENDADOS
+  CNH
+  LAUDOS
+  ISENCOES
+}
+
+model Servico {
+  id          String           @id @default(cuid())
+  nome        String           @unique
+  categoria   CategoriaServico
+  valorPadrao Decimal          @db.Decimal(10, 2)
+  descricao   String?
+  ativo       Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  empresaServicos EmpresaServico[]
+  pedidoItens     PedidoItem[]
+
+  @@map("servicos")
+}
+
+// Preço e disponibilidade do serviço podem ser sobrescritos por empresa.
+model EmpresaServico {
+  id               String  @id @default(cuid())
+  empresaId        String
+  servicoId        String
+  valor            Decimal @db.Decimal(10, 2)
+  empresaPodePagar Boolean @default(false)
+  ativo            Boolean @default(true)
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  servico Servico @relation(fields: [servicoId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, servicoId])
+  @@map("empresa_servicos")
+}
+
+enum MetodoPagamento {
+  CREDITO
+  BOLETO
+  DEBITO
+  TEF_DOC_TRANSFERENCIA_PIX
+  NF_CONCESSIONARIA
+  DINHEIRO
+  DEPOSITO
+  CHEQUE
+}
+
+model EmpresaMetodoPagamento {
+  id        String          @id @default(cuid())
+  empresaId String
+  metodo    MetodoPagamento
+  ativo     Boolean         @default(false)
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, metodo])
+  @@map("empresa_metodos_pagamento")
+}
+
+// ---------------------------------------------------------------------------
+// Cliente e pipeline do processo
+// ---------------------------------------------------------------------------
+
+enum EtapaProcesso {
+  NAO_SE_APLICA
+  INICIAL
+  RELATORIO_MEDICO
+  CNH_ESPECIAL
+  LAUDO_RECEITA_FEDERAL
+  RENOVACAO_CNH
+  IPI
+  ICMS
+  PEDIDO_VEICULO
+  FATURAMENTO
+  LICENCIAMENTO
+  IPVA
+  RODIZIO
+  CARTAO_DEFIS
+  ENTREGA_VEICULO
+}
+
+enum PreferenciaContato {
+  TELEFONE
+  WHATSAPP
+  EMAIL
+}
+
+model Cliente {
+  id             String    @id @default(cuid())
+  nome           String
+  cpf            String?
+  rg             String?
+  cnh            String?
+  dataNascimento DateTime?
+
+  deficienciaMembrosInferiores Boolean?
+  veiculoAcimaDe70Mil          Boolean?
+
+  telefone           String?
+  whatsapp           String?
+  email              String?
+  preferenciaContato PreferenciaContato?
+
+  condutor    Boolean       @default(false)
+  ativo       Boolean       @default(true)
+  etapaAtual  EtapaProcesso @default(NAO_SE_APLICA)
+  indicadoPor String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  cadastradoPorId String?
+  cadastradoPor   Usuario? @relation("ClienteCadastradoPor", fields: [cadastradoPorId], references: [id], onDelete: SetNull)
+
+  consultorId String?
+  consultor   Usuario? @relation("ClienteConsultor", fields: [consultorId], references: [id], onDelete: SetNull)
+
+  endereco              Endereco?
+  condutoresAutorizados CondutorAutorizado[]
+  pedidos               Pedido[]
+  tarefas               Tarefa[]
+  mensagens             Mensagem[]
+  arquivos              ArquivoCliente[]
+  lembretes             Lembrete[]
+
+  @@map("clientes")
+}
+
+model CondutorAutorizado {
+  id   String  @id @default(cuid())
+  nome String
+  cpf  String?
+  cnh  String?
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@map("condutores_autorizados")
+}
+
+// ---------------------------------------------------------------------------
+// Vendas / pedidos
+// ---------------------------------------------------------------------------
+
+enum ResponsavelPagamento {
+  CLIENTE
+  EMPRESA
+}
+
+enum StatusServico {
+  AGUARDANDO_CONFIRMACAO
+  EM_ANDAMENTO
+  CONCLUIDO
+  CANCELADO
+}
+
+model Pedido {
+  id        String   @id @default(cuid())
+  numero    String   @unique @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  itens      PedidoItem[]
+  pagamentos Pagamento[]
+
+  @@map("pedidos")
+}
+
+model PedidoItem {
+  id                   String               @id @default(cuid())
+  valor                Decimal              @db.Decimal(10, 2)
+  responsavelPagamento ResponsavelPagamento @default(CLIENTE)
+  statusServico        StatusServico        @default(AGUARDANDO_CONFIRMACAO)
+  pago                 Boolean              @default(false)
+
+  pedidoId String
+  pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  servicoId String
+  servico   Servico @relation(fields: [servicoId], references: [id], onDelete: Restrict)
+
+  @@map("pedido_itens")
+}
+
+model Pagamento {
+  id     String           @id @default(cuid())
+  valor  Decimal          @db.Decimal(10, 2)
+  metodo MetodoPagamento?
+  data   DateTime         @default(now())
+
+  pedidoId String
+  pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  @@map("pagamentos")
+}
+
+// ---------------------------------------------------------------------------
+// Tarefas, timeline, arquivos, lembretes
+// ---------------------------------------------------------------------------
+
+enum StatusTarefa {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDA
+}
+
+model Tarefa {
+  id          String       @id @default(cuid())
+  titulo      String
+  status      StatusTarefa @default(PENDENTE)
+  iniciadoEm  DateTime?
+  encerradoEm DateTime?
+  createdAt   DateTime     @default(now())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@map("tarefas")
+}
+
+enum CategoriaMensagem {
+  CADASTRO
+  VENDAS
+  GERAL
+}
+
+model Mensagem {
+  id        String            @id @default(cuid())
+  texto     String
+  categoria CategoriaMensagem @default(GERAL)
+  createdAt DateTime          @default(now())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  autorId String?
+  autor   Usuario? @relation(fields: [autorId], references: [id], onDelete: SetNull)
+
+  parentId  String?
+  parent    Mensagem?  @relation("MensagemRespostas", fields: [parentId], references: [id], onDelete: Cascade)
+  respostas Mensagem[] @relation("MensagemRespostas")
+
+  @@map("mensagens")
+}
+
+model ArquivoCliente {
+  id        String   @id @default(cuid())
+  nome      String
+  url       String
+  createdAt DateTime @default(now())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  enviadoPorId String?
+  enviadoPor   Usuario? @relation(fields: [enviadoPorId], references: [id], onDelete: SetNull)
+
+  @@map("arquivos_cliente")
+}
+
+model DocumentoTemplate {
+  id        String   @id @default(cuid())
+  nome      String
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("documento_templates")
+}
+
+model Lembrete {
+  id        String   @id @default(cuid())
+  texto     String
+  data      DateTime
+  publico   Boolean  @default(false)
+  concluido Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  clienteId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+
+  @@map("lembretes")
+}
