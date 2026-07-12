@@ -1,6 +1,7 @@
-import { prisma } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { ClientesTable, PeriodoFilter } from "@/components/clientes/clientes-table";
 import { periodoParaData } from "@/lib/periodo";
+import type { ClienteRow } from "@/components/clientes/clientes-table";
 
 export default async function LeadsPage({
   searchParams,
@@ -10,18 +11,19 @@ export default async function LeadsPage({
   const { periodo = "" } = await searchParams;
   const desde = periodoParaData(periodo);
 
-  const clientes = await prisma.cliente.findMany({
-    where: {
-      pedidos: { none: {} },
-      ...(desde ? { createdAt: { gte: desde.inicio, lte: desde.fim } } : {}),
-    },
-    include: {
-      empresa: { select: { nome: true } },
-      consultor: { select: { nome: true } },
-      _count: { select: { pedidos: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("clientes")
+    .select("id, nome, etapaAtual, createdAt, usuarios(nome), pedidos(id)")
+    .order("createdAt", { ascending: false });
+
+  if (desde) {
+    query = query.gte("createdAt", desde.inicio.toISOString()).lte("createdAt", desde.fim.toISOString());
+  }
+
+  const { data } = await query;
+  const clientes = ((data as unknown as ClienteRow[]) ?? []).filter((c) => c.pedidos.length === 0);
 
   return (
     <div className="space-y-4">

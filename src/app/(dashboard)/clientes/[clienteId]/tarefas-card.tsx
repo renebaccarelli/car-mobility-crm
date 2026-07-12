@@ -15,13 +15,13 @@ type Tarefa = {
   id: string;
   titulo: string;
   status: StatusTarefa;
-  iniciadoEm: Date | null;
-  encerradoEm: Date | null;
+  iniciadoEm: string | null;
+  encerradoEm: string | null;
 };
 
-function formatarDataHora(data: Date | null) {
+function formatarDataHora(data: string | null) {
   if (!data) return "—";
-  return data.toLocaleString("pt-BR");
+  return new Date(data).toLocaleString("pt-BR");
 }
 
 export function TarefasCard({ clienteId, tarefas }: { clienteId: string; tarefas: Tarefa[] }) {

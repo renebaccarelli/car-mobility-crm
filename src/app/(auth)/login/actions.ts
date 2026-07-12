@@ -2,8 +2,7 @@
 
 import { z } from "zod";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
-import { createSession, verifyPassword } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -31,25 +30,12 @@ export async function loginAction(
 
   const { email, senha, redirectTo } = parsed.data;
 
-  const usuario = await prisma.usuario.findUnique({ where: { email } });
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
 
-  if (!usuario || !usuario.ativo) {
+  if (error) {
     return { error: "E-mail ou senha inválidos." };
   }
-
-  const senhaOk = await verifyPassword(senha, usuario.senhaHash);
-  if (!senhaOk) {
-    return { error: "E-mail ou senha inválidos." };
-  }
-
-  await createSession({
-    usuarioId: usuario.id,
-    nome: usuario.nome,
-    email: usuario.email,
-    perfil: usuario.perfil,
-    empresaId: usuario.empresaId,
-    grupoId: null,
-  });
 
   redirect(redirectTo && redirectTo.startsWith("/") ? redirectTo : "/inicio");
 }

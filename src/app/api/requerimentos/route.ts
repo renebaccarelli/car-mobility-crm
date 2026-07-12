@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { getSession } from "@/lib/session";
 import { downloadDocumentoTemplate } from "@/lib/storage";
 import { clienteParaPlaceholders, mergeDocxTemplate } from "@/lib/docx-merge";
 
@@ -18,9 +18,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Parâmetros inválidos" }, { status: 400 });
   }
 
-  const [template, cliente] = await Promise.all([
-    prisma.documentoTemplate.findUnique({ where: { id: templateId } }),
-    prisma.cliente.findUnique({ where: { id: clienteId }, include: { endereco: true } }),
+  const supabase = await createClient();
+
+  const [{ data: template }, { data: cliente }] = await Promise.all([
+    supabase.from("documento_templates").select("*").eq("id", templateId).maybeSingle(),
+    supabase
+      .from("clientes")
+      .select("*, endereco:enderecos(*)")
+      .eq("id", clienteId)
+      .maybeSingle(),
   ]);
 
   if (!template || !cliente) {
@@ -28,7 +34,13 @@ export async function GET(request: NextRequest) {
   }
 
   const templateBuffer = await downloadDocumentoTemplate(template.url);
-  const merged = mergeDocxTemplate(templateBuffer, clienteParaPlaceholders(cliente));
+  const merged = mergeDocxTemplate(
+    templateBuffer,
+    clienteParaPlaceholders({
+      ...cliente,
+      endereco: Array.isArray(cliente.endereco) ? (cliente.endereco[0] ?? null) : cliente.endereco,
+    })
+  );
 
   return new NextResponse(new Uint8Array(merged), {
     headers: {

@@ -1,7 +1,8 @@
-import { prisma } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { ClientesTable, PeriodoFilter } from "@/components/clientes/clientes-table";
 import { periodoParaData } from "@/lib/periodo";
 import { NovoClienteDialog } from "./novo-cliente-form";
+import type { ClienteRow } from "@/components/clientes/clientes-table";
 
 export default async function ClientesPage({
   searchParams,
@@ -11,21 +12,19 @@ export default async function ClientesPage({
   const { periodo = "" } = await searchParams;
   const desde = periodoParaData(periodo);
 
-  const [clientes, empresas] = await Promise.all([
-    prisma.cliente.findMany({
-      where: {
-        pedidos: { some: {} },
-        ...(desde ? { createdAt: { gte: desde.inicio, lte: desde.fim } } : {}),
-      },
-      include: {
-        empresa: { select: { nome: true } },
-        consultor: { select: { nome: true } },
-        _count: { select: { pedidos: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.empresa.findMany({ where: { ativo: true }, select: { id: true, nome: true } }),
-  ]);
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("clientes")
+    .select("id, nome, etapaAtual, createdAt, usuarios(nome), pedidos(id)")
+    .order("createdAt", { ascending: false });
+
+  if (desde) {
+    query = query.gte("createdAt", desde.inicio.toISOString()).lte("createdAt", desde.fim.toISOString());
+  }
+
+  const { data } = await query;
+  const clientes = ((data as unknown as ClienteRow[]) ?? []).filter((c) => c.pedidos.length > 0);
 
   return (
     <div className="space-y-4">
@@ -33,7 +32,7 @@ export default async function ClientesPage({
         <h1 className="text-lg font-semibold">Clientes</h1>
         <div className="flex items-center gap-2">
           <PeriodoFilter basePath="/clientes" ativo={periodo} />
-          <NovoClienteDialog empresas={empresas} />
+          <NovoClienteDialog />
         </div>
       </div>
       <div className="rounded-lg border bg-background">

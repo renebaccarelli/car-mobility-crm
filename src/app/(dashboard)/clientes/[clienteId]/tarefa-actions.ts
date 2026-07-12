@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import type { StatusTarefa } from "@prisma/client";
 
 export async function createTarefaAction(_prevState: { error?: string }, formData: FormData) {
@@ -10,9 +10,17 @@ export async function createTarefaAction(_prevState: { error?: string }, formDat
 
   if (!titulo) return { error: "Informe o título da tarefa" };
 
-  await prisma.tarefa.create({
-    data: { clienteId, titulo, status: "PENDENTE", iniciadoEm: new Date() },
+  const supabase = await createClient();
+  const { error } = await supabase.from("tarefas").insert({
+    clienteId,
+    titulo,
+    status: "PENDENTE",
+    iniciadoEm: new Date().toISOString(),
   });
+
+  if (error) {
+    return { error: "Não foi possível criar a tarefa." };
+  }
 
   revalidatePath(`/clientes/${clienteId}`);
   return {};
@@ -23,12 +31,14 @@ export async function updateTarefaStatusAction(
   clienteId: string,
   status: StatusTarefa
 ) {
-  await prisma.tarefa.update({
-    where: { id: tarefaId },
-    data: {
+  const supabase = await createClient();
+  await supabase
+    .from("tarefas")
+    .update({
       status,
-      encerradoEm: status === "CONCLUIDA" ? new Date() : null,
-    },
-  });
+      encerradoEm: status === "CONCLUIDA" ? new Date().toISOString() : null,
+    })
+    .eq("id", tarefaId);
+
   revalidatePath(`/clientes/${clienteId}`);
 }

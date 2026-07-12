@@ -26,10 +26,7 @@ export const METODO_PAGAMENTO_LABELS: Record<MetodoPagamento, string> = {
 
 export const PERFIL_LABELS: Record<TipoPerfil, string> = {
   ADMINISTRADOR: "Administrador",
-  GERENTE: "Gerente",
   VENDEDOR: "Vendedor",
-  COLABORADOR: "Colaborador",
-  CLIENTE: "Cliente",
 };
 
 // Ordem também representa a sequência do pipeline exibido na ficha do cliente.

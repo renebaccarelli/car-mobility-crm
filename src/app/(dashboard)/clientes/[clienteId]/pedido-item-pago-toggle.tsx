@@ -8,17 +8,19 @@ export function PedidoItemPagoToggle({
   pedidoItemId,
   clienteId,
   pago,
+  podeEditar,
 }: {
   pedidoItemId: string;
   clienteId: string;
   pago: boolean;
+  podeEditar: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
 
   return (
     <Switch
       checked={pago}
-      disabled={isPending}
+      disabled={isPending || !podeEditar}
       onCheckedChange={(checked) =>
         startTransition(() => {
           togglePedidoItemPagoAction(pedidoItemId, clienteId, checked);

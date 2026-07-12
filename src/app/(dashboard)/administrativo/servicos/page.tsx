@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getSession } from "@/lib/session";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -17,7 +19,11 @@ function formatarMoeda(valor: number) {
 }
 
 export default async function ServicosPage() {
-  const servicos = await prisma.servico.findMany({ orderBy: { nome: "asc" } });
+  const session = await getSession();
+  if (session?.perfil !== "ADMINISTRADOR") redirect("/inicio");
+
+  const supabase = await createClient();
+  const { data: servicos } = await supabase.from("servicos").select("*").order("nome");
 
   return (
     <div className="space-y-4">
@@ -38,10 +44,16 @@ export default async function ServicosPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {servicos.map((servico) => (
+            {(servicos ?? []).map((servico) => (
               <TableRow key={servico.id}>
                 <TableCell className="font-medium">{servico.nome}</TableCell>
-                <TableCell>{CATEGORIA_SERVICO_LABELS[servico.categoria]}</TableCell>
+                <TableCell>
+                  {
+                    CATEGORIA_SERVICO_LABELS[
+                      servico.categoria as keyof typeof CATEGORIA_SERVICO_LABELS
+                    ]
+                  }
+                </TableCell>
                 <TableCell>{formatarMoeda(Number(servico.valorPadrao))}</TableCell>
                 <TableCell>
                   <Badge variant={servico.ativo ? "default" : "secondary"}>

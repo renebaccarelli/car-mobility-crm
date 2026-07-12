@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/table";
 import { ETAPA_PROCESSO_LABELS } from "@/lib/labels";
 
-function diasAtras(data: Date) {
-  const dias = Math.floor((Date.now() - data.getTime()) / (1000 * 60 * 60 * 24));
+function diasAtras(data: string) {
+  const dias = Math.floor((Date.now() - new Date(data).getTime()) / (1000 * 60 * 60 * 24));
   if (dias <= 0) return "hoje";
   return `${dias} dia${dias === 1 ? "" : "s"} atrás`;
 }
@@ -20,10 +20,9 @@ export type ClienteRow = {
   id: string;
   nome: string;
   etapaAtual: keyof typeof ETAPA_PROCESSO_LABELS;
-  createdAt: Date;
-  empresa: { nome: string } | null;
-  consultor: { nome: string } | null;
-  _count: { pedidos: number };
+  createdAt: string;
+  usuarios: { nome: string } | null;
+  pedidos: { id: string }[];
 };
 
 const PERIODOS = [
@@ -67,8 +66,7 @@ export function ClientesTable({
       <TableHeader>
         <TableRow>
           <TableHead>Nome</TableHead>
-          <TableHead>Concessionária</TableHead>
-          <TableHead>Consultor</TableHead>
+          <TableHead>Vendedor</TableHead>
           <TableHead>Etapa atual</TableHead>
           <TableHead>Dias do cadastro</TableHead>
           <TableHead>Vendas</TableHead>
@@ -82,18 +80,17 @@ export function ClientesTable({
                 {cliente.nome}
               </Link>
             </TableCell>
-            <TableCell>{cliente.empresa?.nome ?? "Sem concessionária"}</TableCell>
-            <TableCell>{cliente.consultor?.nome ?? "Sem consultor"}</TableCell>
+            <TableCell>{cliente.usuarios?.nome ?? "Sem vendedor"}</TableCell>
             <TableCell>
               <Badge variant="outline">{ETAPA_PROCESSO_LABELS[cliente.etapaAtual]}</Badge>
             </TableCell>
             <TableCell>{diasAtras(cliente.createdAt)}</TableCell>
-            <TableCell>{cliente._count.pedidos} vendas</TableCell>
+            <TableCell>{cliente.pedidos.length} vendas</TableCell>
           </TableRow>
         ))}
         {clientes.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={6} className="text-center text-muted-foreground">
+            <TableCell colSpan={5} className="text-center text-muted-foreground">
               Nenhum registro encontrado.
             </TableCell>
           </TableRow>

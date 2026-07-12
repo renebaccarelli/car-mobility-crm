@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,12 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? "Entrando..." : "Entrar"}
       </Button>
+      <p className="text-center text-sm text-muted-foreground">
+        É vendedor e ainda não tem conta?{" "}
+        <Link href="/cadastro" className="text-primary hover:underline">
+          Cadastre-se
+        </Link>
+      </p>
     </form>
   );
 }

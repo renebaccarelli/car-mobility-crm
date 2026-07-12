@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS, NAV_ITEMS_CONFIG } from "./nav-items";
+import { NAV_ITEMS, NAV_ITEMS_ADMIN } from "./nav-items";
 
 function NavList({ items }: { items: typeof NAV_ITEMS }) {
   const pathname = usePathname();
@@ -44,7 +44,7 @@ function NavList({ items }: { items: typeof NAV_ITEMS }) {
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ perfil }: { perfil: "ADMINISTRADOR" | "VENDEDOR" }) {
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r bg-background md:flex">
       <div className="flex h-16 items-center gap-2 border-b px-5">
@@ -53,12 +53,14 @@ export function Sidebar() {
       </div>
       <nav className="flex flex-1 flex-col justify-between overflow-y-auto p-3">
         <NavList items={NAV_ITEMS} />
-        <div className="space-y-1">
-          <p className="px-3 pt-4 text-xs font-semibold uppercase text-muted-foreground/70">
-            Configurações
-          </p>
-          <NavList items={NAV_ITEMS_CONFIG} />
-        </div>
+        {perfil === "ADMINISTRADOR" ? (
+          <div className="space-y-1">
+            <p className="px-3 pt-4 text-xs font-semibold uppercase text-muted-foreground/70">
+              Administrativo
+            </p>
+            <NavList items={NAV_ITEMS_ADMIN} />
+          </div>
+        ) : null}
       </nav>
     </aside>
   );

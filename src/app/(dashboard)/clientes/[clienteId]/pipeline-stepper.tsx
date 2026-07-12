@@ -9,9 +9,11 @@ import type { EtapaProcesso } from "@prisma/client";
 export function PipelineStepper({
   clienteId,
   etapaAtual,
+  podeEditar,
 }: {
   clienteId: string;
   etapaAtual: EtapaProcesso;
+  podeEditar: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const indiceAtual = ETAPA_PROCESSO_ORDEM.indexOf(etapaAtual);
@@ -24,7 +26,7 @@ export function PipelineStepper({
           <button
             key={etapa}
             type="button"
-            disabled={isPending}
+            disabled={isPending || !podeEditar}
             onClick={() => startTransition(() => updateEtapaAction(clienteId, etapa))}
             className={cn(
               "border-r px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors last:border-r-0 hover:opacity-80 disabled:pointer-events-none",

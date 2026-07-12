@@ -19,36 +19,31 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useCloseDialogOnSuccess } from "@/hooks/use-close-dialog-on-success";
-import { createUsuarioAction } from "./actions";
+import { createVendedorAction } from "./actions";
 
 const initialState: { error?: string } = {};
 
-const PERFIS = [
-  { value: "ADMINISTRADOR", label: "Administrador" },
-  { value: "GERENTE", label: "Gerente" },
-  { value: "VENDEDOR", label: "Vendedor" },
-  { value: "COLABORADOR", label: "Colaborador" },
-  { value: "CLIENTE", label: "Cliente" },
-];
-
-export function NovoUsuarioDialog({ empresaId }: { empresaId: string }) {
+export function NovoVendedorDialog() {
   const [open, setOpen] = useState(false);
-  const [state, formAction, isPending] = useActionState(createUsuarioAction, initialState);
+  const [state, formAction, isPending] = useActionState(createVendedorAction, initialState);
 
   useCloseDialogOnSuccess(isPending, Boolean(state.error), setOpen);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button>+ Usuário</Button>} />
+      <DialogTrigger render={<Button>+ Vendedor</Button>} />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Novo usuário</DialogTitle>
+          <DialogTitle>Novo vendedor</DialogTitle>
         </DialogHeader>
-        <form action={formAction} className="space-y-4">
-          <input type="hidden" name="empresaId" value={empresaId} />
+        <form action={formAction} className="space-y-3">
           <div className="space-y-2">
             <Label htmlFor="nome">Nome</Label>
             <Input id="nome" name="nome" required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="telefone">Telefone</Label>
+            <Input id="telefone" name="telefone" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">E-mail</Label>
@@ -56,20 +51,17 @@ export function NovoUsuarioDialog({ empresaId }: { empresaId: string }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="senha">Senha</Label>
-            <Input id="senha" name="senha" type="password" required minLength={6} />
+            <Input id="senha" name="senha" type="password" minLength={6} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="perfil">Cargo</Label>
-            <Select name="perfil" defaultValue="COLABORADOR">
+            <Label htmlFor="perfil">Perfil</Label>
+            <Select name="perfil" defaultValue="VENDEDOR">
               <SelectTrigger id="perfil" className="w-full">
-                <SelectValue placeholder="Selecione" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {PERFIS.map((perfil) => (
-                  <SelectItem key={perfil.value} value={perfil.value}>
-                    {perfil.label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="VENDEDOR">Vendedor</SelectItem>
+                <SelectItem value="ADMINISTRADOR">Administrador</SelectItem>
               </SelectContent>
             </Select>
           </div>

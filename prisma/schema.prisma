@@ -12,65 +12,27 @@ datasource db {
 }
 
 // ---------------------------------------------------------------------------
-// Multi-tenant core: Grupo (tenant raiz) -> Empresa -> Usuario
+// Usuários (Administrador / Vendedor) — 1:1 com auth.users do Supabase.
+// O id é o mesmo uuid de auth.users.id; a linha é criada por um trigger
+// (handle_new_user) no signup, não pelo Prisma.
 // ---------------------------------------------------------------------------
 
 enum TipoPerfil {
   ADMINISTRADOR
-  GERENTE
   VENDEDOR
-  COLABORADOR
-  CLIENTE
-}
-
-model Grupo {
-  id        String   @id @default(cuid())
-  nome      String
-  ativo     Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  empresas Empresa[]
-
-  @@map("grupos")
-}
-
-model Empresa {
-  id        String   @id @default(cuid())
-  nome      String
-  cnpj      String?
-  marca     String?
-  ativo     Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  grupoId String
-  grupo   Grupo  @relation(fields: [grupoId], references: [id], onDelete: Cascade)
-
-  usuarios         Usuario[]
-  clientes         Cliente[]
-  enderecos        Endereco[]
-  servicos         EmpresaServico[]
-  metodosPagamento EmpresaMetodoPagamento[]
-
-  @@map("empresas")
 }
 
 model Usuario {
-  id        String     @id @default(cuid())
+  id        String     @id @db.Uuid
   nome      String
   email     String     @unique
-  senhaHash String
-  perfil    TipoPerfil @default(COLABORADOR)
+  telefone  String?
+  perfil    TipoPerfil @default(VENDEDOR)
   ativo     Boolean    @default(true)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  empresaId String?
-  empresa   Empresa? @relation(fields: [empresaId], references: [id], onDelete: SetNull)
-
   clientesCadastrados Cliente[]        @relation("ClienteCadastradoPor")
-  clientesConsultor   Cliente[]        @relation("ClienteConsultor")
   mensagens           Mensagem[]
   arquivosEnviados    ArquivoCliente[]
   lembretes           Lembrete[]
@@ -87,9 +49,6 @@ model Endereco {
   municipio   String?
   estado      String?
   cep         String?
-
-  empresaId String?
-  empresa   Empresa? @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
   clienteId String?  @unique
   cliente   Cliente? @relation(fields: [clienteId], references: [id], onDelete: Cascade)
@@ -118,26 +77,9 @@ model Servico {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
-  empresaServicos EmpresaServico[]
-  pedidoItens     PedidoItem[]
+  pedidoItens PedidoItem[]
 
   @@map("servicos")
-}
-
-// Preço e disponibilidade do serviço podem ser sobrescritos por empresa.
-model EmpresaServico {
-  id               String  @id @default(cuid())
-  empresaId        String
-  servicoId        String
-  valor            Decimal @db.Decimal(10, 2)
-  empresaPodePagar Boolean @default(false)
-  ativo            Boolean @default(true)
-
-  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  servico Servico @relation(fields: [servicoId], references: [id], onDelete: Cascade)
-
-  @@unique([empresaId, servicoId])
-  @@map("empresa_servicos")
 }
 
 enum MetodoPagamento {
@@ -149,18 +91,6 @@ enum MetodoPagamento {
   DINHEIRO
   DEPOSITO
   CHEQUE
-}
-
-model EmpresaMetodoPagamento {
-  id        String          @id @default(cuid())
-  empresaId String
-  metodo    MetodoPagamento
-  ativo     Boolean         @default(false)
-
-  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-
-  @@unique([empresaId, metodo])
-  @@map("empresa_metodos_pagamento")
 }
 
 // ---------------------------------------------------------------------------
@@ -215,14 +145,12 @@ model Cliente {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  empresaId String
-  empresa   Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  // Vendedor dono do cadastro — usado pelas policies de RLS para isolamento.
+  cadastradoPorId String  @db.Uuid
+  cadastradoPor   Usuario @relation("ClienteCadastradoPor", fields: [cadastradoPorId], references: [id], onDelete: Restrict)
 
-  cadastradoPorId String?
-  cadastradoPor   Usuario? @relation("ClienteCadastradoPor", fields: [cadastradoPorId], references: [id], onDelete: SetNull)
-
-  consultorId String?
-  consultor   Usuario? @relation("ClienteConsultor", fields: [consultorId], references: [id], onDelete: SetNull)
+  // Preenchido no primeiro login do cliente no portal (link por e-mail).
+  userId String? @unique @db.Uuid
 
   endereco              Endereco?
   condutoresAutorizados CondutorAutorizado[]
@@ -345,7 +273,7 @@ model Mensagem {
   clienteId String
   cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
-  autorId String?
+  autorId String?  @db.Uuid
   autor   Usuario? @relation(fields: [autorId], references: [id], onDelete: SetNull)
 
   parentId  String?
@@ -364,7 +292,7 @@ model ArquivoCliente {
   clienteId String
   cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
-  enviadoPorId String?
+  enviadoPorId String?  @db.Uuid
   enviadoPor   Usuario? @relation(fields: [enviadoPorId], references: [id], onDelete: SetNull)
 
   @@map("arquivos_cliente")
@@ -388,7 +316,7 @@ model Lembrete {
   concluido Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  usuarioId String?
+  usuarioId String?  @db.Uuid
   usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   clienteId String?

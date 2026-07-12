@@ -2,45 +2,59 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { getSession } from "@/lib/session";
 
 export async function createVendaAction(_prevState: { error?: string }, formData: FormData) {
   const session = await getSession();
   if (!session) redirect("/login");
 
   const clienteId = formData.get("clienteId") as string;
-  const empresaServicoIds = formData.getAll("empresaServicoIds") as string[];
+  const servicoIds = formData.getAll("servicoIds") as string[];
 
-  if (empresaServicoIds.length === 0) {
+  if (servicoIds.length === 0) {
     return { error: "Selecione ao menos um serviço." };
   }
 
-  const empresaServicos = await prisma.empresaServico.findMany({
-    where: { id: { in: empresaServicoIds } },
-    include: { servico: true },
-  });
+  const supabase = await createClient();
 
-  const pedido = await prisma.pedido.create({
-    data: {
-      clienteId,
-      itens: {
-        create: empresaServicos.map((es) => ({
-          servicoId: es.servicoId,
-          valor: es.valor,
-        })),
-      },
-    },
-  });
+  const { data: servicos } = await supabase
+    .from("servicos")
+    .select("id, nome, valorPadrao")
+    .in("id", servicoIds);
 
-  const nomesServicos = empresaServicos.map((es) => es.servico.nome).join(", ");
-  await prisma.mensagem.create({
-    data: {
-      clienteId,
-      autorId: session.usuarioId,
-      categoria: "VENDAS",
-      texto: `Nova venda criada por ${session.nome}:\n${nomesServicos}\nPedido: ${pedido.numero}`,
-    },
+  if (!servicos || servicos.length === 0) {
+    return { error: "Serviços não encontrados." };
+  }
+
+  const { data: pedido, error: pedidoError } = await supabase
+    .from("pedidos")
+    .insert({ clienteId })
+    .select("id, numero")
+    .single();
+
+  if (pedidoError || !pedido) {
+    return { error: "Não foi possível criar a venda." };
+  }
+
+  const { error: itensError } = await supabase.from("pedido_itens").insert(
+    servicos.map((s) => ({
+      pedidoId: pedido.id,
+      servicoId: s.id,
+      valor: s.valorPadrao,
+    }))
+  );
+
+  if (itensError) {
+    return { error: "Não foi possível salvar os serviços da venda." };
+  }
+
+  const nomesServicos = servicos.map((s) => s.nome).join(", ");
+  await supabase.from("mensagens").insert({
+    clienteId,
+    autorId: session.usuarioId,
+    categoria: "VENDAS",
+    texto: `Nova venda criada por ${session.nome}:\n${nomesServicos}\nPedido: ${pedido.numero}`,
   });
 
   revalidatePath(`/clientes/${clienteId}`);
@@ -54,18 +68,20 @@ export async function togglePedidoItemPagoAction(
   clienteId: string,
   pago: boolean
 ) {
-  const item = await prisma.pedidoItem.update({
-    where: { id: pedidoItemId },
-    data: {
+  const supabase = await createClient();
+
+  const { data: item, error } = await supabase
+    .from("pedido_itens")
+    .update({
       pago,
       statusServico: pago ? "EM_ANDAMENTO" : "AGUARDANDO_CONFIRMACAO",
-    },
-  });
+    })
+    .eq("id", pedidoItemId)
+    .select("pedidoId, valor")
+    .single();
 
-  if (pago) {
-    await prisma.pagamento.create({
-      data: { pedidoId: item.pedidoId, valor: item.valor },
-    });
+  if (!error && item && pago) {
+    await supabase.from("pagamentos").insert({ pedidoId: item.pedidoId, valor: item.valor });
   }
 
   revalidatePath(`/clientes/${clienteId}`);

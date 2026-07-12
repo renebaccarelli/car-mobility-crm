@@ -3,12 +3,10 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
-import type { EtapaProcesso, PreferenciaContato } from "@prisma/client";
+import { createClient } from "@/lib/supabase/server";
+import { getSession } from "@/lib/session";
 
 const clienteSchema = z.object({
-  empresaId: z.string().min(1, "Selecione a concessionária"),
   nome: z.string().min(2, "Informe o nome do cliente"),
   dataNascimento: z.string().optional(),
   cpf: z.string().optional(),
@@ -27,7 +25,6 @@ export async function createClienteAction(_prevState: { error?: string }, formDa
   if (!session) redirect("/login");
 
   const parsed = clienteSchema.safeParse({
-    empresaId: formData.get("empresaId"),
     nome: formData.get("nome"),
     dataNascimento: formData.get("dataNascimento") || undefined,
     cpf: formData.get("cpf") || undefined,
@@ -46,33 +43,36 @@ export async function createClienteAction(_prevState: { error?: string }, formDa
   }
 
   const data = parsed.data;
+  const supabase = await createClient();
 
-  const cliente = await prisma.cliente.create({
-    data: {
-      empresaId: data.empresaId,
+  const { data: cliente, error } = await supabase
+    .from("clientes")
+    .insert({
       nome: data.nome,
-      dataNascimento: data.dataNascimento ? new Date(data.dataNascimento) : undefined,
+      dataNascimento: data.dataNascimento ? new Date(data.dataNascimento).toISOString() : null,
       cpf: data.cpf,
       rg: data.rg,
       whatsapp: data.whatsapp,
       telefone: data.telefone,
-      email: data.email || undefined,
+      email: data.email || null,
       condutor: data.condutor === "sim",
-      preferenciaContato: data.preferenciaContato as PreferenciaContato | undefined,
-      etapaAtual: (data.etapaAtual as EtapaProcesso | undefined) ?? "NAO_SE_APLICA",
+      preferenciaContato: data.preferenciaContato ?? null,
+      etapaAtual: data.etapaAtual ?? "NAO_SE_APLICA",
       indicadoPor: data.indicadoPor,
       cadastradoPorId: session.usuarioId,
-      consultorId: session.usuarioId,
-    },
-  });
+    })
+    .select("id")
+    .single();
 
-  await prisma.mensagem.create({
-    data: {
-      clienteId: cliente.id,
-      autorId: session.usuarioId,
-      categoria: "CADASTRO",
-      texto: `Cadastro do cliente efetuado por ${session.nome}`,
-    },
+  if (error || !cliente) {
+    return { error: "Não foi possível cadastrar o cliente." };
+  }
+
+  await supabase.from("mensagens").insert({
+    clienteId: cliente.id,
+    autorId: session.usuarioId,
+    categoria: "CADASTRO",
+    texto: `Cadastro do cliente efetuado por ${session.nome}`,
   });
 
   revalidatePath("/leads");
@@ -110,25 +110,31 @@ export async function updateClienteAction(_prevState: { error?: string }, formDa
   }
 
   const { clienteId, ...data } = parsed.data;
+  const supabase = await createClient();
 
-  await prisma.cliente.update({
-    where: { id: clienteId },
-    data: {
+  const { error } = await supabase
+    .from("clientes")
+    .update({
       ...data,
       email: data.email || null,
-      preferenciaContato: data.preferenciaContato as PreferenciaContato | undefined,
-    },
-  });
+      preferenciaContato: data.preferenciaContato ?? null,
+    })
+    .eq("id", clienteId);
+
+  if (error) {
+    return { error: "Você não tem permissão para editar este cliente." };
+  }
 
   revalidatePath(`/clientes/${clienteId}`);
   return {};
 }
 
-export async function updateEtapaAction(clienteId: string, etapaAtual: EtapaProcesso) {
+export async function updateEtapaAction(clienteId: string, etapaAtual: string) {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  await prisma.cliente.update({ where: { id: clienteId }, data: { etapaAtual } });
+  const supabase = await createClient();
+  await supabase.from("clientes").update({ etapaAtual }).eq("id", clienteId);
   revalidatePath(`/clientes/${clienteId}`);
 }
 
@@ -140,7 +146,15 @@ export async function addCondutorAction(_prevState: { error?: string }, formData
 
   if (!nome) return { error: "Informe o nome do condutor" };
 
-  await prisma.condutorAutorizado.create({ data: { clienteId, nome, cpf, cnh } });
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("condutores_autorizados")
+    .insert({ clienteId, nome, cpf, cnh });
+
+  if (error) {
+    return { error: "Não foi possível adicionar o condutor." };
+  }
+
   revalidatePath(`/clientes/${clienteId}`);
   return {};
 }
@@ -150,8 +164,10 @@ export async function addMensagemAction(clienteId: string, texto: string) {
   if (!session) redirect("/login");
   if (!texto.trim()) return;
 
-  await prisma.mensagem.create({
-    data: { clienteId, texto, autorId: session.usuarioId, categoria: "GERAL" },
-  });
+  const supabase = await createClient();
+  await supabase
+    .from("mensagens")
+    .insert({ clienteId, texto, autorId: session.usuarioId, categoria: "GERAL" });
+
   revalidatePath(`/clientes/${clienteId}`);
 }

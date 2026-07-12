@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { uploadDocumentoTemplate } from "@/lib/storage";
 
 export async function createDocumentoTemplateAction(
@@ -16,15 +16,19 @@ export async function createDocumentoTemplateAction(
 
   const path = await uploadDocumentoTemplate(file);
 
-  await prisma.documentoTemplate.create({
-    data: { nome, url: path },
-  });
+  const supabase = await createClient();
+  const { error } = await supabase.from("documento_templates").insert({ nome, url: path });
+
+  if (error) {
+    return { error: "Você não tem permissão para cadastrar documentos." };
+  }
 
   revalidatePath("/documentos");
   return {};
 }
 
 export async function deleteDocumentoTemplateAction(id: string) {
-  await prisma.documentoTemplate.delete({ where: { id } });
+  const supabase = await createClient();
+  await supabase.from("documento_templates").delete().eq("id", id);
   revalidatePath("/documentos");
 }

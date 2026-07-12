@@ -20,11 +20,22 @@ import {
 } from "@/components/ui/dialog";
 import { useCloseDialogOnSuccess } from "@/hooks/use-close-dialog-on-success";
 import { updateClienteAction } from "../actions";
-import type { Cliente } from "@prisma/client";
 
 const initialState: { error?: string } = {};
 
-export function EditarClienteDialog({ cliente }: { cliente: Cliente }) {
+type ClienteEditavel = {
+  id: string;
+  nome: string;
+  cpf: string | null;
+  rg: string | null;
+  cnh: string | null;
+  telefone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  preferenciaContato: string | null;
+};
+
+export function EditarClienteDialog({ cliente }: { cliente: ClienteEditavel }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(updateClienteAction, initialState);
 

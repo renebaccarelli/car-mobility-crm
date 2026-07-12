@@ -2,8 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { destroySession, getSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { destroySession, getSession } from "@/lib/session";
+import { createClient } from "@/lib/supabase/server";
 
 export async function logoutAction() {
   await destroySession();
@@ -22,20 +22,24 @@ export async function createLembreteAction(_prevState: { error?: string }, formD
     return { error: "Preencha o texto e a data do lembrete." };
   }
 
-  await prisma.lembrete.create({
-    data: {
-      texto,
-      data: new Date(data),
-      publico,
-      usuarioId: session.usuarioId,
-    },
+  const supabase = await createClient();
+  const { error } = await supabase.from("lembretes").insert({
+    texto,
+    data: new Date(data).toISOString(),
+    publico,
+    usuarioId: session.usuarioId,
   });
+
+  if (error) {
+    return { error: "Não foi possível salvar o lembrete." };
+  }
 
   revalidatePath("/inicio");
   return {};
 }
 
 export async function toggleLembreteConcluidoAction(lembreteId: string, concluido: boolean) {
-  await prisma.lembrete.update({ where: { id: lembreteId }, data: { concluido } });
+  const supabase = await createClient();
+  await supabase.from("lembretes").update({ concluido }).eq("id", lembreteId);
   revalidatePath("/inicio");
 }

@@ -26,7 +26,9 @@
       "Read(//tmp/**)",
       "Bash(find 'C:/Users/bacca/OneDrive/VRS/Programação/Projeto Renato/Clone CRM/node_modules/@base-ui/react/select' -iname *root*)",
       "Bash(curl -s --cookie session=__CMDSUB_OUTPUT__ http://localhost:3000/clientes/cmrf8fcba0003nn60bvbhz1w7 -o /tmp/cliente2.html)",
-      "Bash(node C:/Users/bacca/AppData/Local/Temp/claude/C--Users-bacca-OneDrive-VRS-Programa--o-Projeto-Renato-Clone-CRM/14ec5195-bcb4-43d3-adf6-eee30ca72803/scratchpad/make-template.js)"
+      "Bash(node C:/Users/bacca/AppData/Local/Temp/claude/C--Users-bacca-OneDrive-VRS-Programa--o-Projeto-Renato-Clone-CRM/14ec5195-bcb4-43d3-adf6-eee30ca72803/scratchpad/make-template.js)",
+      "Bash(git config *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

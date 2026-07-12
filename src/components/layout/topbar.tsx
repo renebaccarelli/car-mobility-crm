@@ -10,9 +10,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, LogOut, Calendar } from "lucide-react";
-import type { SessionPayload } from "@/lib/auth";
-import type { Lembrete } from "@prisma/client";
+import type { SessionPayload } from "@/lib/session";
 import { logoutAction } from "@/app/(dashboard)/actions";
+
+type Lembrete = {
+  id: string;
+  texto: string;
+  data: string;
+};
 
 function initials(nome: string) {
   return nome
@@ -54,7 +59,7 @@ export function Topbar({
               <DropdownMenuItem key={lembrete.id} className="flex-col items-start gap-0.5">
                 <span className="text-sm">{lembrete.texto}</span>
                 <span className="text-xs text-muted-foreground">
-                  {lembrete.data.toLocaleDateString("pt-BR")}
+                  {new Date(lembrete.data).toLocaleDateString("pt-BR")}
                 </span>
               </DropdownMenuItem>
             ))}

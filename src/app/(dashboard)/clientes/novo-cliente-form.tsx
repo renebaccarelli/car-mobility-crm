@@ -23,9 +23,7 @@ import { createClienteAction } from "./actions";
 
 const initialState: { error?: string } = {};
 
-type Empresa = { id: string; nome: string };
-
-export function NovoClienteDialog({ empresas }: { empresas: Empresa[] }) {
+export function NovoClienteDialog() {
   const [open, setOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(createClienteAction, initialState);
 
@@ -39,22 +37,6 @@ export function NovoClienteDialog({ empresas }: { empresas: Empresa[] }) {
           <DialogTitle>Cadastro do cliente</DialogTitle>
         </DialogHeader>
         <form action={formAction} className="max-h-[70vh] space-y-3 overflow-y-auto pr-1">
-          <div className="space-y-2">
-            <Label htmlFor="empresaId">Concessionária</Label>
-            <Select name="empresaId" defaultValue={empresas[0]?.id}>
-              <SelectTrigger id="empresaId" className="w-full">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {empresas.map((empresa) => (
-                  <SelectItem key={empresa.id} value={empresa.id}>
-                    {empresa.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 space-y-2">
               <Label htmlFor="nome">Nome do cliente*</Label>

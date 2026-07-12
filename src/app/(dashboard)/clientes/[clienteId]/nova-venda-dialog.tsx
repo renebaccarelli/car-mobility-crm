@@ -18,10 +18,11 @@ import type { CategoriaServico } from "@prisma/client";
 
 const initialState: { error?: string } = {};
 
-type EmpresaServicoOption = {
+type ServicoOption = {
   id: string;
-  valor: number;
-  servico: { nome: string; categoria: CategoriaServico };
+  valorPadrao: number;
+  nome: string;
+  categoria: CategoriaServico;
 };
 
 const CATEGORIAS: CategoriaServico[] = ["RECOMENDADOS", "CNH", "LAUDOS", "ISENCOES"];
@@ -32,10 +33,10 @@ function formatarMoeda(valor: number) {
 
 export function NovaVendaDialog({
   clienteId,
-  empresaServicos,
+  servicos,
 }: {
   clienteId: string;
-  empresaServicos: EmpresaServicoOption[];
+  servicos: ServicoOption[];
 }) {
   const [open, setOpen] = useState(false);
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
@@ -59,7 +60,7 @@ export function NovaVendaDialog({
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="clienteId" value={clienteId} />
           {[...selecionados].map((id) => (
-            <input key={id} type="hidden" name="empresaServicoIds" value={id} />
+            <input key={id} type="hidden" name="servicoIds" value={id} />
           ))}
 
           <Tabs defaultValue="RECOMENDADOS">
@@ -72,31 +73,33 @@ export function NovaVendaDialog({
             </TabsList>
             {CATEGORIAS.map((categoria) => (
               <TabsContent key={categoria} value={categoria} className="space-y-2">
-                {empresaServicos
-                  .filter((es) => es.servico.categoria === categoria)
-                  .map((es) => (
+                {servicos
+                  .filter((s) => s.categoria === categoria)
+                  .map((s) => (
                     <div
-                      key={es.id}
+                      key={s.id}
                       className="flex items-center justify-between rounded-md border p-3"
                     >
                       <div>
-                        <p className="text-sm font-medium">{es.servico.nome}</p>
-                        <p className="text-xs text-muted-foreground">{formatarMoeda(es.valor)}</p>
+                        <p className="text-sm font-medium">{s.nome}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatarMoeda(s.valorPadrao)}
+                        </p>
                       </div>
                       <Switch
-                        checked={selecionados.has(es.id)}
+                        checked={selecionados.has(s.id)}
                         onCheckedChange={(checked) => {
                           setSelecionados((prev) => {
                             const next = new Set(prev);
-                            if (checked) next.add(es.id);
-                            else next.delete(es.id);
+                            if (checked) next.add(s.id);
+                            else next.delete(s.id);
                             return next;
                           });
                         }}
                       />
                     </div>
                   ))}
-                {empresaServicos.filter((es) => es.servico.categoria === categoria).length === 0 ? (
+                {servicos.filter((s) => s.categoria === categoria).length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhum serviço nessa categoria.</p>
                 ) : null}
               </TabsContent>
