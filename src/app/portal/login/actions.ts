@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isValidCpf } from "@/lib/cpf";
@@ -9,6 +10,16 @@ export type PortalLoginState = {
   error?: string;
   sucesso?: boolean;
 };
+
+// Usa a origem real da requisição (localhost em dev, o domínio de produção
+// quando publicado) em vez do Site URL fixo do Supabase, para que o link do
+// e-mail sempre volte para onde a pessoa realmente está testando.
+async function getEmailRedirectTo() {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const protocol = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${protocol}://${host}/auth/confirm`;
+}
 
 const emailSchema = z.object({ email: z.string().email("E-mail inválido") });
 
@@ -33,7 +44,7 @@ export async function solicitarLinkPorEmailAction(
     const supabase = await createClient();
     await supabase.auth.signInWithOtp({
       email: parsed.data.email,
-      options: { shouldCreateUser: true },
+      options: { shouldCreateUser: true, emailRedirectTo: await getEmailRedirectTo() },
     });
   }
 
@@ -72,7 +83,7 @@ export async function solicitarLinkPorCpfAction(
     const supabase = await createClient();
     await supabase.auth.signInWithOtp({
       email: cliente.email,
-      options: { shouldCreateUser: true },
+      options: { shouldCreateUser: true, emailRedirectTo: await getEmailRedirectTo() },
     });
   }
 
