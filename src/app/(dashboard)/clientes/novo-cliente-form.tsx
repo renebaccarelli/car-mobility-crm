@@ -4,6 +4,8 @@ import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { CpfInput } from "@/components/ui/cpf-input";
 import {
   Select,
   SelectContent,
@@ -48,7 +50,7 @@ export function NovoClienteDialog() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="cpf">CPF</Label>
-              <Input id="cpf" name="cpf" />
+              <CpfInput id="cpf" name="cpf" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="rg">RG</Label>
@@ -56,11 +58,11 @@ export function NovoClienteDialog() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="whatsapp">Whatsapp</Label>
-              <Input id="whatsapp" name="whatsapp" />
+              <PhoneInput id="whatsapp" name="whatsapp" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="telefone">Telefone principal*</Label>
-              <Input id="telefone" name="telefone" required />
+              <PhoneInput id="telefone" name="telefone" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>

@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PREFERENCIA_CONTATO_LABELS } from "@/lib/labels";
+import { formatCpf } from "@/lib/cpf";
 import { PipelineStepper } from "./pipeline-stepper";
 import { EditarClienteDialog } from "./editar-cliente-form";
 import { NovoCondutorDialog } from "./condutor-form";
@@ -105,11 +106,11 @@ export default async function ClienteDetailPage({
             </div>
             <div className="flex gap-2">
               <RequerimentosMenu clienteId={cliente.id} templates={documentoTemplates ?? []} />
-              {isAdmin ? <EditarClienteDialog cliente={cliente} /> : null}
+              <EditarClienteDialog cliente={cliente} />
             </div>
           </CardHeader>
           <CardContent className="space-y-2.5 text-sm">
-            <Field label="CPF" value={cliente.cpf ?? "Não informado"} />
+            <Field label="CPF" value={cliente.cpf ? formatCpf(cliente.cpf) : "Não informado"} />
             <Field label="RG" value={cliente.rg ?? "Não informado"} />
             <Field label="CNH" value={cliente.cnh ?? "Não informado"} />
             <Field

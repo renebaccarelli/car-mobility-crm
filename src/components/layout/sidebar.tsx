@@ -1,9 +1,18 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS, NAV_ITEMS_ADMIN } from "./nav-items";
+import {
+  NAV_ITEMS,
+  NAV_ITEMS_ADMIN,
+  DASHBOARD_ITEM,
+  LEADS_ITEM,
+  CLIENTES_ITEM,
+  DOCUMENTOS_ITEM,
+  VENDEDORES_ITEM,
+} from "./nav-items";
 
 function NavList({ items }: { items: typeof NAV_ITEMS }) {
   const pathname = usePathname();
@@ -45,14 +54,18 @@ function NavList({ items }: { items: typeof NAV_ITEMS }) {
 }
 
 export function Sidebar({ perfil }: { perfil: "ADMINISTRADOR" | "VENDEDOR" }) {
+  const mainItems =
+    perfil === "ADMINISTRADOR"
+      ? [DASHBOARD_ITEM, LEADS_ITEM, VENDEDORES_ITEM, CLIENTES_ITEM, DOCUMENTOS_ITEM]
+      : NAV_ITEMS;
+
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r bg-background md:flex">
-      <div className="flex h-16 items-center gap-2 border-b px-5">
-        <span className="text-lg font-bold tracking-tight text-primary">Car</span>
-        <span className="text-lg font-semibold text-muted-foreground">Mobility</span>
+      <div className="flex h-16 items-center border-b px-5">
+        <Image src="/logo.png" alt="Car Mobility" width={83} height={32} priority />
       </div>
       <nav className="flex flex-1 flex-col justify-between overflow-y-auto p-3">
-        <NavList items={NAV_ITEMS} />
+        <NavList items={mainItems} />
         {perfil === "ADMINISTRADOR" ? (
           <div className="space-y-1">
             <p className="px-3 pt-4 text-xs font-semibold uppercase text-muted-foreground/70">

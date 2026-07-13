@@ -24,7 +24,7 @@ export default async function ClientesPage({
   }
 
   const { data } = await query;
-  const clientes = ((data as unknown as ClienteRow[]) ?? []).filter((c) => c.pedidos.length > 0);
+  const clientes = (data as unknown as ClienteRow[]) ?? [];
 
   return (
     <div className="space-y-4">

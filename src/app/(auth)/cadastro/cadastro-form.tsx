@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { cadastroVendedorAction, type CadastroState } from "./actions";
 
 const initialState: CadastroState = {};
@@ -15,12 +16,9 @@ export function CadastroForm() {
   if (state.sucesso) {
     return (
       <div className="space-y-3 text-center text-sm">
-        <p>
-          Cadastro realizado! Enviamos um link de confirmação para o seu e-mail — clique nele
-          para ativar sua conta e depois faça login.
-        </p>
+        <p>Cadastro realizado! Sua conta já está ativa — faça login para continuar.</p>
         <Link href="/login" className="text-primary hover:underline">
-          Voltar para o login
+          Ir para o login
         </Link>
       </div>
     );
@@ -34,7 +32,7 @@ export function CadastroForm() {
       </div>
       <div className="space-y-2">
         <Label htmlFor="telefone">Telefone</Label>
-        <Input id="telefone" name="telefone" required />
+        <PhoneInput id="telefone" name="telefone" required />
       </div>
       <div className="space-y-2">
         <Label htmlFor="email">E-mail</Label>

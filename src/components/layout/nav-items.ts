@@ -7,14 +7,18 @@ export type NavItem = {
   icon: LucideIcon;
 };
 
-export const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/inicio", icon: LayoutDashboard },
-  { label: "Leads", href: "/leads", icon: Filter },
-  { label: "Clientes", href: "/clientes", icon: Users },
-  { label: "Documentos", href: "/documentos", icon: FileText },
-];
+export const DASHBOARD_ITEM: NavItem = { label: "Dashboard", href: "/inicio", icon: LayoutDashboard };
+export const LEADS_ITEM: NavItem = { label: "Leads", href: "/leads", icon: Filter };
+export const CLIENTES_ITEM: NavItem = { label: "Clientes", href: "/clientes", icon: Users };
+export const DOCUMENTOS_ITEM: NavItem = { label: "Documentos", href: "/documentos", icon: FileText };
+export const VENDEDORES_ITEM: NavItem = {
+  label: "Vendedores",
+  href: "/administrativo/vendedores",
+  icon: UserCog,
+};
+
+export const NAV_ITEMS: NavItem[] = [DASHBOARD_ITEM, LEADS_ITEM, CLIENTES_ITEM, DOCUMENTOS_ITEM];
 
 export const NAV_ITEMS_ADMIN: NavItem[] = [
   { label: "Serviços", href: "/administrativo/servicos", icon: Wrench },
-  { label: "Vendedores", href: "/administrativo/vendedores", icon: UserCog },
 ];

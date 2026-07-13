@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isValidCpf } from "@/lib/cpf";
 
 export type PortalLoginState = {
   error?: string;
@@ -40,7 +41,7 @@ export async function solicitarLinkPorEmailAction(
 }
 
 const cpfSchema = z.object({
-  cpf: z.string().min(11, "Informe um CPF válido"),
+  cpf: z.string().refine(isValidCpf, "Informe um CPF válido"),
   dataNascimento: z.string().min(1, "Informe a data de nascimento"),
 });
 

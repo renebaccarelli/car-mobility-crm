@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CpfInput } from "@/components/ui/cpf-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   solicitarLinkPorCpfAction,
@@ -69,7 +70,7 @@ export function PortalLoginForm() {
           <form action={cpfAction} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="cpf">CPF</Label>
-              <Input id="cpf" name="cpf" placeholder="000.000.000-00" required />
+              <CpfInput id="cpf" name="cpf" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="dataNascimento">Data de nascimento</Label>

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { ETAPA_PROCESSO_LABELS, PERFIL_LABELS } from "@/lib/labels";
 import { NovoVendedorDialog } from "./vendedor-form";
+import { EditarVendedorDialog } from "./editar-vendedor-form";
 import { VendedorAtivoToggle } from "./toggle";
 
 export default async function VendedoresPage() {
@@ -67,6 +68,7 @@ export default async function VendedoresPage() {
               <TableHead>Perfil</TableHead>
               <TableHead>Oportunidades cadastradas</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead></TableHead>
               <TableHead className="text-right">Ativo</TableHead>
             </TableRow>
           </TableHeader>
@@ -84,6 +86,9 @@ export default async function VendedoresPage() {
                     {usuario.ativo ? "Ativo" : "Inativo"}
                   </Badge>
                 </TableCell>
+                <TableCell>
+                  <EditarVendedorDialog vendedor={usuario} />
+                </TableCell>
                 <TableCell className="text-right">
                   <VendedorAtivoToggle usuarioId={usuario.id} ativo={usuario.ativo} />
                 </TableCell>
@@ -91,7 +96,7 @@ export default async function VendedoresPage() {
             ))}
             {(usuarios ?? []).length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
                   Nenhum vendedor cadastrado.
                 </TableCell>
               </TableRow>

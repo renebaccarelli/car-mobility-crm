@@ -5,11 +5,29 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/session";
+import { isValidCpf } from "@/lib/cpf";
+
+function friendlyClienteError(error: { code?: string; message?: string } | null, fallback: string) {
+  if (error?.code === "23505") {
+    if (error.message?.includes("clientes_cpf_key")) {
+      return "Já existe um cliente cadastrado com esse CPF.";
+    }
+    if (error.message?.includes("clientes_email_key")) {
+      return "Já existe um cliente cadastrado com esse e-mail.";
+    }
+  }
+  return fallback;
+}
+
+const cpfField = z
+  .string()
+  .optional()
+  .refine((value) => !value || isValidCpf(value), "CPF inválido");
 
 const clienteSchema = z.object({
   nome: z.string().min(2, "Informe o nome do cliente"),
   dataNascimento: z.string().optional(),
-  cpf: z.string().optional(),
+  cpf: cpfField,
   rg: z.string().optional(),
   whatsapp: z.string().optional(),
   telefone: z.string().min(1, "Informe o telefone principal"),
@@ -65,7 +83,7 @@ export async function createClienteAction(_prevState: { error?: string }, formDa
     .single();
 
   if (error || !cliente) {
-    return { error: "Não foi possível cadastrar o cliente." };
+    return { error: friendlyClienteError(error, "Não foi possível cadastrar o cliente.") };
   }
 
   await supabase.from("mensagens").insert({
@@ -80,16 +98,22 @@ export async function createClienteAction(_prevState: { error?: string }, formDa
   return {};
 }
 
+const triEstadoField = z.enum(["sim", "nao", ""]).optional();
+
 const updateClienteSchema = z.object({
   clienteId: z.string().min(1),
   nome: z.string().min(2),
-  cpf: z.string().optional(),
+  cpf: cpfField,
   rg: z.string().optional(),
   cnh: z.string().optional(),
+  dataNascimento: z.string().optional(),
   whatsapp: z.string().optional(),
   telefone: z.string().optional(),
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   preferenciaContato: z.enum(["TELEFONE", "WHATSAPP", "EMAIL"]).optional(),
+  condutor: z.enum(["sim", "nao"]).optional(),
+  deficienciaMembrosInferiores: triEstadoField,
+  indicadoPor: z.string().optional(),
 });
 
 export async function updateClienteAction(_prevState: { error?: string }, formData: FormData) {
@@ -99,17 +123,22 @@ export async function updateClienteAction(_prevState: { error?: string }, formDa
     cpf: formData.get("cpf") || undefined,
     rg: formData.get("rg") || undefined,
     cnh: formData.get("cnh") || undefined,
+    dataNascimento: formData.get("dataNascimento") || undefined,
     whatsapp: formData.get("whatsapp") || undefined,
     telefone: formData.get("telefone") || undefined,
     email: formData.get("email") || undefined,
     preferenciaContato: formData.get("preferenciaContato") || undefined,
+    condutor: formData.get("condutor") || undefined,
+    deficienciaMembrosInferiores: formData.get("deficienciaMembrosInferiores") || "",
+    indicadoPor: formData.get("indicadoPor") || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
-  const { clienteId, ...data } = parsed.data;
+  const { clienteId, deficienciaMembrosInferiores, condutor, dataNascimento, ...data } =
+    parsed.data;
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -118,11 +147,17 @@ export async function updateClienteAction(_prevState: { error?: string }, formDa
       ...data,
       email: data.email || null,
       preferenciaContato: data.preferenciaContato ?? null,
+      condutor: condutor === "sim",
+      deficienciaMembrosInferiores:
+        deficienciaMembrosInferiores === "" ? null : deficienciaMembrosInferiores === "sim",
+      dataNascimento: dataNascimento ? new Date(dataNascimento).toISOString() : null,
     })
     .eq("id", clienteId);
 
   if (error) {
-    return { error: "Você não tem permissão para editar este cliente." };
+    return {
+      error: friendlyClienteError(error, "Você não tem permissão para editar este cliente."),
+    };
   }
 
   revalidatePath(`/clientes/${clienteId}`);
@@ -145,6 +180,7 @@ export async function addCondutorAction(_prevState: { error?: string }, formData
   const cnh = (formData.get("cnh") as string) || undefined;
 
   if (!nome) return { error: "Informe o nome do condutor" };
+  if (cpf && !isValidCpf(cpf)) return { error: "CPF inválido" };
 
   const supabase = await createClient();
   const { error } = await supabase

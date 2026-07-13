@@ -66,3 +66,54 @@ export async function toggleVendedorAtivoAction(usuarioId: string, ativo: boolea
   await supabase.from("usuarios").update({ ativo }).eq("id", usuarioId);
   revalidatePath("/administrativo/vendedores");
 }
+
+const editarVendedorSchema = z.object({
+  usuarioId: z.string().min(1),
+  nome: z.string().min(2, "Informe o nome"),
+  telefone: z.string().min(8, "Informe um telefone válido"),
+  email: z.string().email("E-mail inválido"),
+  perfil: z.enum(["ADMINISTRADOR", "VENDEDOR"]),
+});
+
+export async function updateVendedorAction(_prevState: { error?: string }, formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (session.perfil !== "ADMINISTRADOR") {
+    return { error: "Só administradores podem editar vendedores." };
+  }
+
+  const parsed = editarVendedorSchema.safeParse({
+    usuarioId: formData.get("usuarioId"),
+    nome: formData.get("nome"),
+    telefone: formData.get("telefone"),
+    email: formData.get("email"),
+    perfil: formData.get("perfil"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
+  }
+
+  const { usuarioId, nome, telefone, email, perfil } = parsed.data;
+  const adminClient = createAdminClient();
+
+  const { error: authError } = await adminClient.auth.admin.updateUserById(usuarioId, { email });
+  if (authError) {
+    if (authError.code === "email_exists") {
+      return { error: "Já existe uma conta com esse e-mail." };
+    }
+    return { error: "Não foi possível atualizar o e-mail do vendedor." };
+  }
+
+  const { error } = await adminClient
+    .from("usuarios")
+    .update({ nome, telefone, email, perfil })
+    .eq("id", usuarioId);
+
+  if (error) {
+    return { error: "Não foi possível atualizar os dados do vendedor." };
+  }
+
+  revalidatePath("/administrativo/vendedores");
+  return {};
+}

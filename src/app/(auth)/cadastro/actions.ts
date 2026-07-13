@@ -43,6 +43,12 @@ export async function cadastroVendedorAction(
     if (error.code === "user_already_exists") {
       return { error: "Já existe uma conta com esse e-mail." };
     }
+    if (error.code === "over_email_send_rate_limit") {
+      return {
+        error:
+          "Limite de envio de e-mails atingido no momento. Aguarde alguns minutos e tente novamente.",
+      };
+    }
     return { error: "Não foi possível concluir o cadastro. Tente novamente." };
   }
 

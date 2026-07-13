@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CpfInput } from "@/components/ui/cpf-input";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +38,7 @@ export function NovoCondutorDialog({ clienteId }: { clienteId: string }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="cpf">CPF</Label>
-            <Input id="cpf" name="cpf" />
+            <CpfInput id="cpf" name="cpf" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="cnh">CNH</Label>

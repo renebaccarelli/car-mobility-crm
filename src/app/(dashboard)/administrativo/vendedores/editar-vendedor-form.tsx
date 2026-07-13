@@ -20,43 +20,73 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useCloseDialogOnSuccess } from "@/hooks/use-close-dialog-on-success";
-import { createVendedorAction } from "./actions";
+import { updateVendedorAction } from "./actions";
 
 const initialState: { error?: string } = {};
 
-export function NovoVendedorDialog() {
+type VendedorEditavel = {
+  id: string;
+  nome: string;
+  telefone: string | null;
+  email: string;
+  perfil: "ADMINISTRADOR" | "VENDEDOR";
+};
+
+export function EditarVendedorDialog({ vendedor }: { vendedor: VendedorEditavel }) {
   const [open, setOpen] = useState(false);
-  const [state, formAction, isPending] = useActionState(createVendedorAction, initialState);
+  const [state, formAction, isPending] = useActionState(updateVendedorAction, initialState);
+  const [nome, setNome] = useState(vendedor.nome);
+  const [email, setEmail] = useState(vendedor.email);
+  const [perfil, setPerfil] = useState(vendedor.perfil);
 
   useCloseDialogOnSuccess(isPending, Boolean(state.error), setOpen);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button>+ Vendedor</Button>} />
+      <DialogTrigger render={<Button variant="outline" size="sm">Editar</Button>} />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Novo vendedor</DialogTitle>
+          <DialogTitle>Editar vendedor</DialogTitle>
         </DialogHeader>
         <form action={formAction} className="space-y-3">
+          <input type="hidden" name="usuarioId" value={vendedor.id} />
           <div className="space-y-2">
             <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" name="nome" required />
+            <Input
+              id="nome"
+              name="nome"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              required
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="telefone">Telefone</Label>
-            <PhoneInput id="telefone" name="telefone" required />
+            <PhoneInput
+              id="telefone"
+              name="telefone"
+              defaultValue={vendedor.telefone ?? ""}
+              required
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">E-mail</Label>
-            <Input id="email" name="email" type="email" required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="senha">Senha</Label>
-            <Input id="senha" name="senha" type="password" minLength={6} required />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="perfil">Perfil</Label>
-            <Select name="perfil" defaultValue="VENDEDOR">
+            <Select
+              name="perfil"
+              value={perfil}
+              onValueChange={(v) => setPerfil((v ?? "VENDEDOR") as "ADMINISTRADOR" | "VENDEDOR")}
+            >
               <SelectTrigger id="perfil" className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -68,7 +98,7 @@ export function NovoVendedorDialog() {
           </div>
           {state.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
           <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? "Salvando..." : "Cadastrar"}
+            {isPending ? "Salvando..." : "Salvar"}
           </Button>
         </form>
       </DialogContent>
