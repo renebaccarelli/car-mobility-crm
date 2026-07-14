@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { ClientesTable, PeriodoFilter } from "@/components/clientes/clientes-table";
 import { periodoParaData } from "@/lib/periodo";
-import { NovoClienteDialog } from "./novo-cliente-form";
 import type { ClienteRow } from "@/components/clientes/clientes-table";
 
 export default async function ClientesPage({
@@ -30,10 +29,7 @@ export default async function ClientesPage({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">Clientes</h1>
-        <div className="flex items-center gap-2">
-          <PeriodoFilter basePath="/clientes" ativo={periodo} />
-          <NovoClienteDialog />
-        </div>
+        <PeriodoFilter basePath="/clientes" ativo={periodo} />
       </div>
       <div className="rounded-lg border bg-background">
         <ClientesTable clientes={clientes} detailBasePath="/clientes" />

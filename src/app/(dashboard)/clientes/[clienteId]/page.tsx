@@ -111,7 +111,6 @@ export default async function ClienteDetailPage({
           </CardHeader>
           <CardContent className="space-y-2.5 text-sm">
             <Field label="CPF" value={cliente.cpf ? formatCpf(cliente.cpf) : "Não informado"} />
-            <Field label="RG" value={cliente.rg ?? "Não informado"} />
             <Field label="CNH" value={cliente.cnh ?? "Não informado"} />
             <Field
               label="Deficiência é nos membros inferiores?"
@@ -125,7 +124,6 @@ export default async function ClienteDetailPage({
             />
             <Field label="Telefone" value={cliente.telefone ?? "Não informado"} />
             <Field label="Whatsapp" value={cliente.whatsapp ?? "Não informado"} />
-            <Field label="E-mail" value={cliente.email ?? "Não informado"} />
             <Field label="Data de nascimento" value={formatarData(cliente.dataNascimento)} />
             <Field
               label="Preferência de contato"
@@ -187,15 +185,17 @@ export default async function ClienteDetailPage({
           <Card>
             <CardHeader className="flex-row items-center justify-between">
               <CardTitle className="text-base">Serviços</CardTitle>
-              <NovaVendaDialog
-                clienteId={cliente.id}
-                servicos={(servicos ?? []).map((s) => ({
-                  id: s.id,
-                  valorPadrao: Number(s.valorPadrao),
-                  nome: s.nome,
-                  categoria: s.categoria,
-                }))}
-              />
+              {isAdmin ? (
+                <NovaVendaDialog
+                  clienteId={cliente.id}
+                  servicos={(servicos ?? []).map((s) => ({
+                    id: s.id,
+                    valorPadrao: Number(s.valorPadrao),
+                    nome: s.nome,
+                    categoria: s.categoria,
+                  }))}
+                />
+              ) : null}
             </CardHeader>
             <CardContent className="p-0">
               <Table>

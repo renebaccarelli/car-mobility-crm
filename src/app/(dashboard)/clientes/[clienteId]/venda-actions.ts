@@ -8,6 +8,9 @@ import { getSession } from "@/lib/session";
 export async function createVendaAction(_prevState: { error?: string }, formData: FormData) {
   const session = await getSession();
   if (!session) redirect("/login");
+  if (session.perfil !== "ADMINISTRADOR") {
+    return { error: "Só administradores podem atribuir serviços." };
+  }
 
   const clienteId = formData.get("clienteId") as string;
   const servicoIds = formData.getAll("servicoIds") as string[];

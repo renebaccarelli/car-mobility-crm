@@ -6,15 +6,29 @@ const BUCKET_DOCUMENTO_TEMPLATES = "documento-templates";
 
 const getServiceClient = createAdminClient;
 
-export async function uploadArquivoCliente(clienteId: string, file: File) {
+// O Storage do Supabase rejeita chaves de objeto com acentos/caracteres
+// não-ASCII ("Invalid key"). O nome original (com acento) continua sendo
+// exibido normalmente — só o caminho salvo no bucket precisa ser seguro.
+function sanitizeFileName(fileName: string) {
+  return fileName
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^\w.-]/g, "_");
+}
+
+// Gera uma URL assinada para o navegador enviar o arquivo direto pro
+// Storage, sem passar pela Server Action — evita o limite de tamanho de
+// requisição das funções serverless (ex.: 4,5MB na Vercel).
+export async function createArquivoClienteUploadUrl(clienteId: string, fileName: string) {
   const supabase = getServiceClient();
-  const path = `${clienteId}/${Date.now()}-${file.name}`;
-  const { error } = await supabase.storage
+  const sufixo = Math.random().toString(36).slice(2, 8);
+  const path = `${clienteId}/${Date.now()}-${sufixo}-${sanitizeFileName(fileName)}`;
+  const { data, error } = await supabase.storage
     .from(BUCKET_ARQUIVOS_CLIENTE)
-    .upload(path, file, { contentType: file.type });
+    .createSignedUploadUrl(path);
 
   if (error) throw error;
-  return path;
+  return { path, token: data.token };
 }
 
 export async function getArquivoClienteUrl(path: string) {
@@ -34,7 +48,7 @@ export async function deleteArquivoCliente(path: string) {
 
 export async function uploadDocumentoTemplate(file: File) {
   const supabase = getServiceClient();
-  const path = `${Date.now()}-${file.name}`;
+  const path = `${Date.now()}-${sanitizeFileName(file.name)}`;
   const { error } = await supabase.storage
     .from(BUCKET_DOCUMENTO_TEMPLATES)
     .upload(path, file, { contentType: file.type });

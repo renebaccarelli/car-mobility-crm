@@ -11,17 +11,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, LogOut, Calendar, KeyRound } from "lucide-react";
+import { Search, LogOut, KeyRound } from "lucide-react";
 import type { SessionPayload } from "@/lib/session";
 import { PERFIL_LABELS } from "@/lib/labels";
 import { logoutAction } from "@/app/(dashboard)/actions";
 import { AlterarSenhaDialog } from "@/app/(dashboard)/conta/alterar-senha-dialog";
-
-type Lembrete = {
-  id: string;
-  texto: string;
-  data: string;
-};
 
 function initials(nome: string) {
   return nome
@@ -31,13 +25,7 @@ function initials(nome: string) {
     .join("");
 }
 
-export function Topbar({
-  session,
-  lembretesProximos,
-}: {
-  session: SessionPayload;
-  lembretesProximos: Lembrete[];
-}) {
+export function Topbar({ session }: { session: SessionPayload }) {
   const [senhaDialogOpen, setSenhaDialogOpen] = useState(false);
 
   return (
@@ -47,33 +35,6 @@ export function Topbar({
         <Input placeholder="Buscar cliente" className="pl-9" />
       </div>
       <div className="ml-auto flex items-center gap-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="outline" className="gap-2" />}>
-            <Calendar className="size-4" />
-            Agenda
-            {lembretesProximos.length > 0 ? (
-              <span className="flex size-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                {lembretesProximos.length}
-              </span>
-            ) : null}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-72">
-            <p className="px-1.5 py-1 text-xs text-muted-foreground">
-              Você tem {lembretesProximos.length} lembrete(s) nos próximos 3 dias.
-            </p>
-            {lembretesProximos.map((lembrete) => (
-              <DropdownMenuItem key={lembrete.id} className="flex-col items-start gap-0.5">
-                <span className="text-sm">{lembrete.texto}</span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(lembrete.data).toLocaleDateString("pt-BR")}
-                </span>
-              </DropdownMenuItem>
-            ))}
-            {lembretesProximos.length === 0 ? (
-              <DropdownMenuItem disabled>Nenhum lembrete próximo</DropdownMenuItem>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" className="gap-2 px-2" />}>
             <Avatar className="size-8">

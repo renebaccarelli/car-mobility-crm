@@ -29,29 +29,23 @@ type ClienteEditavel = {
   id: string;
   nome: string;
   cpf: string | null;
-  rg: string | null;
   cnh: string | null;
   dataNascimento: string | null;
   telefone: string | null;
   whatsapp: string | null;
-  email: string | null;
   preferenciaContato: string | null;
   condutor: boolean;
   deficienciaMembrosInferiores: boolean | null;
-  indicadoPor: string | null;
 };
 
 export function EditarClienteDialog({ cliente }: { cliente: ClienteEditavel }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(updateClienteAction, initialState);
   const [nome, setNome] = useState(cliente.nome);
-  const [rg, setRg] = useState(cliente.rg ?? "");
   const [cnh, setCnh] = useState(cliente.cnh ?? "");
   const [dataNascimento, setDataNascimento] = useState(
     cliente.dataNascimento ? cliente.dataNascimento.slice(0, 10) : ""
   );
-  const [email, setEmail] = useState(cliente.email ?? "");
-  const [indicadoPor, setIndicadoPor] = useState(cliente.indicadoPor ?? "");
   const [condutor, setCondutor] = useState(cliente.condutor ? "sim" : "nao");
   const [deficienciaMembrosInferiores, setDeficienciaMembrosInferiores] = useState(
     cliente.deficienciaMembrosInferiores === null
@@ -91,10 +85,6 @@ export function EditarClienteDialog({ cliente }: { cliente: ClienteEditavel }) {
               <CpfInput id="cpf" name="cpf" defaultValue={cliente.cpf ?? ""} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="rg">RG</Label>
-              <Input id="rg" name="rg" value={rg} onChange={(e) => setRg(e.target.value)} />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="cnh">CNH</Label>
               <Input id="cnh" name="cnh" value={cnh} onChange={(e) => setCnh(e.target.value)} />
             </div>
@@ -115,25 +105,6 @@ export function EditarClienteDialog({ cliente }: { cliente: ClienteEditavel }) {
             <div className="space-y-2">
               <Label htmlFor="whatsapp">Whatsapp</Label>
               <PhoneInput id="whatsapp" name="whatsapp" defaultValue={cliente.whatsapp ?? ""} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="indicadoPor">Indicado por</Label>
-              <Input
-                id="indicadoPor"
-                name="indicadoPor"
-                value={indicadoPor}
-                onChange={(e) => setIndicadoPor(e.target.value)}
-              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -180,7 +151,6 @@ export function EditarClienteDialog({ cliente }: { cliente: ClienteEditavel }) {
               <SelectContent>
                 <SelectItem value="TELEFONE">Telefone</SelectItem>
                 <SelectItem value="WHATSAPP">WhatsApp</SelectItem>
-                <SelectItem value="EMAIL">E-mail</SelectItem>
               </SelectContent>
             </Select>
           </div>

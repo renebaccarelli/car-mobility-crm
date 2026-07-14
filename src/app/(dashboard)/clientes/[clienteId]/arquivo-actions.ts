@@ -4,25 +4,42 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/session";
-import { deleteArquivoCliente, uploadArquivoCliente } from "@/lib/storage";
+import { createArquivoClienteUploadUrl, deleteArquivoCliente } from "@/lib/storage";
 
-export async function uploadArquivoAction(_prevState: { error?: string }, formData: FormData) {
+// Envio direto do navegador pro Storage (ver criarUploadUrlAction +
+// registrarArquivoAction): evita o limite de tamanho de requisição das
+// Server Actions/funções serverless, já que o arquivo não passa por aqui.
+export async function criarUploadUrlAction(clienteId: string, fileName: string) {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const clienteId = formData.get("clienteId") as string;
-  const file = formData.get("file") as File | null;
+  const supabase = await createClient();
+  const { data: cliente } = await supabase
+    .from("clientes")
+    .select("id")
+    .eq("id", clienteId)
+    .maybeSingle();
 
-  if (!file || file.size === 0) {
-    return { error: "Selecione um arquivo" };
+  if (!cliente) {
+    return { error: "Cliente não encontrado." };
   }
 
-  const path = await uploadArquivoCliente(clienteId, file);
+  try {
+    const { path, token } = await createArquivoClienteUploadUrl(clienteId, fileName);
+    return { path, token };
+  } catch {
+    return { error: "Não foi possível preparar o envio do arquivo." };
+  }
+}
+
+export async function registrarArquivoAction(clienteId: string, path: string, nome: string) {
+  const session = await getSession();
+  if (!session) redirect("/login");
 
   const supabase = await createClient();
   const { error } = await supabase.from("arquivos_cliente").insert({
     clienteId,
-    nome: file.name,
+    nome,
     url: path,
     enviadoPorId: session.usuarioId,
   });

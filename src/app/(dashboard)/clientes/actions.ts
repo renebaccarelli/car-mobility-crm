@@ -28,14 +28,11 @@ const clienteSchema = z.object({
   nome: z.string().min(2, "Informe o nome do cliente"),
   dataNascimento: z.string().optional(),
   cpf: cpfField,
-  rg: z.string().optional(),
   whatsapp: z.string().optional(),
   telefone: z.string().min(1, "Informe o telefone principal"),
-  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   condutor: z.enum(["sim", "nao"]).optional(),
-  preferenciaContato: z.enum(["TELEFONE", "WHATSAPP", "EMAIL"]).optional(),
+  preferenciaContato: z.enum(["TELEFONE", "WHATSAPP"]).optional(),
   etapaAtual: z.string().optional(),
-  indicadoPor: z.string().optional(),
 });
 
 export async function createClienteAction(_prevState: { error?: string }, formData: FormData) {
@@ -46,14 +43,11 @@ export async function createClienteAction(_prevState: { error?: string }, formDa
     nome: formData.get("nome"),
     dataNascimento: formData.get("dataNascimento") || undefined,
     cpf: formData.get("cpf") || undefined,
-    rg: formData.get("rg") || undefined,
     whatsapp: formData.get("whatsapp") || undefined,
     telefone: formData.get("telefone"),
-    email: formData.get("email") || undefined,
     condutor: formData.get("condutor") || undefined,
     preferenciaContato: formData.get("preferenciaContato") || undefined,
     etapaAtual: formData.get("etapaAtual") || undefined,
-    indicadoPor: formData.get("indicadoPor") || undefined,
   });
 
   if (!parsed.success) {
@@ -69,14 +63,11 @@ export async function createClienteAction(_prevState: { error?: string }, formDa
       nome: data.nome,
       dataNascimento: data.dataNascimento ? new Date(data.dataNascimento).toISOString() : null,
       cpf: data.cpf,
-      rg: data.rg,
       whatsapp: data.whatsapp,
       telefone: data.telefone,
-      email: data.email || null,
       condutor: data.condutor === "sim",
       preferenciaContato: data.preferenciaContato ?? null,
       etapaAtual: data.etapaAtual ?? "NAO_SE_APLICA",
-      indicadoPor: data.indicadoPor,
       cadastradoPorId: session.usuarioId,
     })
     .select("id")
@@ -104,16 +95,13 @@ const updateClienteSchema = z.object({
   clienteId: z.string().min(1),
   nome: z.string().min(2),
   cpf: cpfField,
-  rg: z.string().optional(),
   cnh: z.string().optional(),
   dataNascimento: z.string().optional(),
   whatsapp: z.string().optional(),
   telefone: z.string().optional(),
-  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
-  preferenciaContato: z.enum(["TELEFONE", "WHATSAPP", "EMAIL"]).optional(),
+  preferenciaContato: z.enum(["TELEFONE", "WHATSAPP"]).optional(),
   condutor: z.enum(["sim", "nao"]).optional(),
   deficienciaMembrosInferiores: triEstadoField,
-  indicadoPor: z.string().optional(),
 });
 
 export async function updateClienteAction(_prevState: { error?: string }, formData: FormData) {
@@ -121,16 +109,13 @@ export async function updateClienteAction(_prevState: { error?: string }, formDa
     clienteId: formData.get("clienteId"),
     nome: formData.get("nome"),
     cpf: formData.get("cpf") || undefined,
-    rg: formData.get("rg") || undefined,
     cnh: formData.get("cnh") || undefined,
     dataNascimento: formData.get("dataNascimento") || undefined,
     whatsapp: formData.get("whatsapp") || undefined,
     telefone: formData.get("telefone") || undefined,
-    email: formData.get("email") || undefined,
     preferenciaContato: formData.get("preferenciaContato") || undefined,
     condutor: formData.get("condutor") || undefined,
     deficienciaMembrosInferiores: formData.get("deficienciaMembrosInferiores") || "",
-    indicadoPor: formData.get("indicadoPor") || undefined,
   });
 
   if (!parsed.success) {
@@ -145,7 +130,6 @@ export async function updateClienteAction(_prevState: { error?: string }, formDa
     .from("clientes")
     .update({
       ...data,
-      email: data.email || null,
       preferenciaContato: data.preferenciaContato ?? null,
       condutor: condutor === "sim",
       deficienciaMembrosInferiores:
