@@ -20,6 +20,7 @@ datasource db {
 enum TipoPerfil {
   ADMINISTRADOR
   VENDEDOR
+  CONCESSIONARIA
 }
 
 model Usuario {
@@ -32,12 +33,70 @@ model Usuario {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
+  // Preenchido quando perfil = VENDEDOR: em qual unidade (concessionária +
+  // marca) ele atua — é essa unidade que isola os dados dele.
+  concessionariaMarcaId String?
+  concessionariaMarca   ConcessionariaMarca? @relation("VendedorUnidade", fields: [concessionariaMarcaId], references: [id], onDelete: SetNull)
+
+  // Preenchido quando perfil = CONCESSIONARIA: qual concessionária esse
+  // login representa (enxerga todas as unidades/marcas dela).
+  concessionariaId String?
+  concessionaria   Concessionaria? @relation(fields: [concessionariaId], references: [id], onDelete: SetNull)
+
   clientesCadastrados Cliente[]        @relation("ClienteCadastradoPor")
   mensagens           Mensagem[]
   arquivosEnviados    ArquivoCliente[]
   lembretes           Lembrete[]
 
   @@map("usuarios")
+}
+
+// ---------------------------------------------------------------------------
+// Concessionárias / marcas
+// ---------------------------------------------------------------------------
+
+model Marca {
+  id        String   @id @default(cuid())
+  nome      String   @unique
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  unidades ConcessionariaMarca[]
+
+  @@map("marcas")
+}
+
+model Concessionaria {
+  id        String   @id @default(cuid())
+  nome      String
+  telefone  String?
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  usuarios Usuario[]
+  marcas   ConcessionariaMarca[]
+
+  @@map("concessionarias")
+}
+
+// A "unidade autônoma": uma marca dentro de uma concessionária. É a essa
+// unidade que o Vendedor é vinculado — não à Concessionaria diretamente —
+// para que marcas diferentes da mesma concessionária fiquem isoladas.
+model ConcessionariaMarca {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  concessionariaId String
+  concessionaria   Concessionaria @relation(fields: [concessionariaId], references: [id], onDelete: Cascade)
+
+  marcaId String
+  marca   Marca @relation(fields: [marcaId], references: [id], onDelete: Restrict)
+
+  vendedores Usuario[] @relation("VendedorUnidade")
+
+  @@unique([concessionariaId, marcaId])
+  @@map("concessionaria_marcas")
 }
 
 model Endereco {

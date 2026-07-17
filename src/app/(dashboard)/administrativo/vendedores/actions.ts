@@ -7,13 +7,19 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/session";
 
-const vendedorSchema = z.object({
-  nome: z.string().min(2, "Informe o nome"),
-  telefone: z.string().min(8, "Informe um telefone válido"),
-  email: z.string().email("E-mail inválido"),
-  senha: z.string().min(6, "A senha precisa ter ao menos 6 caracteres"),
-  perfil: z.enum(["ADMINISTRADOR", "VENDEDOR"]),
-});
+const vendedorSchema = z
+  .object({
+    nome: z.string().min(2, "Informe o nome"),
+    telefone: z.string().min(8, "Informe um telefone válido"),
+    email: z.string().email("E-mail inválido"),
+    senha: z.string().min(6, "A senha precisa ter ao menos 6 caracteres"),
+    perfil: z.enum(["ADMINISTRADOR", "VENDEDOR"]),
+    concessionariaMarcaId: z.string().optional(),
+  })
+  .refine((data) => data.perfil !== "VENDEDOR" || Boolean(data.concessionariaMarcaId), {
+    message: "Selecione a concessionária e a marca do vendedor.",
+    path: ["concessionariaMarcaId"],
+  });
 
 export async function createVendedorAction(_prevState: { error?: string }, formData: FormData) {
   const session = await getSession();
@@ -28,13 +34,14 @@ export async function createVendedorAction(_prevState: { error?: string }, formD
     email: formData.get("email"),
     senha: formData.get("senha"),
     perfil: formData.get("perfil"),
+    concessionariaMarcaId: formData.get("concessionariaMarcaId") || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
-  const { nome, telefone, email, senha, perfil } = parsed.data;
+  const { nome, telefone, email, senha, perfil, concessionariaMarcaId } = parsed.data;
 
   const adminClient = createAdminClient();
   const { data: created, error } = await adminClient.auth.admin.createUser({
@@ -52,9 +59,15 @@ export async function createVendedorAction(_prevState: { error?: string }, formD
   }
 
   // O trigger cria a linha em usuarios com perfil VENDEDOR; ajustamos aqui
-  // caso o administrador tenha escolhido criar outro administrador.
+  // caso o administrador tenha escolhido criar outro administrador, ou
+  // vinculamos a unidade concessionária+marca escolhida.
   if (perfil === "ADMINISTRADOR") {
     await adminClient.from("usuarios").update({ perfil: "ADMINISTRADOR" }).eq("id", created.user.id);
+  } else {
+    await adminClient
+      .from("usuarios")
+      .update({ concessionariaMarcaId })
+      .eq("id", created.user.id);
   }
 
   revalidatePath("/administrativo/vendedores");
@@ -67,13 +80,19 @@ export async function toggleVendedorAtivoAction(usuarioId: string, ativo: boolea
   revalidatePath("/administrativo/vendedores");
 }
 
-const editarVendedorSchema = z.object({
-  usuarioId: z.string().min(1),
-  nome: z.string().min(2, "Informe o nome"),
-  telefone: z.string().min(8, "Informe um telefone válido"),
-  email: z.string().email("E-mail inválido"),
-  perfil: z.enum(["ADMINISTRADOR", "VENDEDOR"]),
-});
+const editarVendedorSchema = z
+  .object({
+    usuarioId: z.string().min(1),
+    nome: z.string().min(2, "Informe o nome"),
+    telefone: z.string().min(8, "Informe um telefone válido"),
+    email: z.string().email("E-mail inválido"),
+    perfil: z.enum(["ADMINISTRADOR", "VENDEDOR"]),
+    concessionariaMarcaId: z.string().optional(),
+  })
+  .refine((data) => data.perfil !== "VENDEDOR" || Boolean(data.concessionariaMarcaId), {
+    message: "Selecione a concessionária e a marca do vendedor.",
+    path: ["concessionariaMarcaId"],
+  });
 
 export async function updateVendedorAction(_prevState: { error?: string }, formData: FormData) {
   const session = await getSession();
@@ -88,13 +107,14 @@ export async function updateVendedorAction(_prevState: { error?: string }, formD
     telefone: formData.get("telefone"),
     email: formData.get("email"),
     perfil: formData.get("perfil"),
+    concessionariaMarcaId: formData.get("concessionariaMarcaId") || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
-  const { usuarioId, nome, telefone, email, perfil } = parsed.data;
+  const { usuarioId, nome, telefone, email, perfil, concessionariaMarcaId } = parsed.data;
   const adminClient = createAdminClient();
 
   const { error: authError } = await adminClient.auth.admin.updateUserById(usuarioId, { email });
@@ -107,7 +127,13 @@ export async function updateVendedorAction(_prevState: { error?: string }, formD
 
   const { error } = await adminClient
     .from("usuarios")
-    .update({ nome, telefone, email, perfil })
+    .update({
+      nome,
+      telefone,
+      email,
+      perfil,
+      concessionariaMarcaId: perfil === "VENDEDOR" ? concessionariaMarcaId : null,
+    })
     .eq("id", usuarioId);
 
   if (error) {

@@ -1,5 +1,14 @@
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Filter, Users, FileText, Wrench, UserCog } from "lucide-react";
+import {
+  LayoutDashboard,
+  Filter,
+  Users,
+  FileText,
+  Wrench,
+  UserCog,
+  Building2,
+  Tag,
+} from "lucide-react";
 
 export type NavItem = {
   label: string;
@@ -21,4 +30,8 @@ export const NAV_ITEMS: NavItem[] = [DASHBOARD_ITEM, LEADS_ITEM, CLIENTES_ITEM, 
 
 export const NAV_ITEMS_ADMIN: NavItem[] = [
   { label: "Serviços", href: "/administrativo/servicos", icon: Wrench },
+  { label: "Marcas", href: "/administrativo/marcas", icon: Tag },
+  { label: "Concessionárias", href: "/administrativo/concessionarias", icon: Building2 },
 ];
+
+export const NAV_ITEMS_CONCESSIONARIA: NavItem[] = [DASHBOARD_ITEM];

@@ -3,8 +3,17 @@ import { getSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ETAPA_PROCESSO_LABELS } from "@/lib/labels";
 import { NovoLeadDialog } from "../leads/novo-lead-form";
+import { ClientesTable, type ClienteRow } from "@/components/clientes/clientes-table";
 import type { SessionPayload } from "@/lib/session";
 
 function diasAtras(data: string) {
@@ -19,6 +28,10 @@ export default async function InicioPage() {
 
   if (session.perfil === "VENDEDOR") {
     return <VendedorDashboard session={session} />;
+  }
+
+  if (session.perfil === "CONCESSIONARIA") {
+    return <ConcessionariaDashboard session={session} />;
   }
 
   return <AdminDashboard session={session} />;
@@ -101,6 +114,90 @@ async function VendedorDashboard({ session }: { session: SessionPayload }) {
           {recentes.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum cadastro ainda.</p>
           ) : null}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+async function ConcessionariaDashboard({ session }: { session: SessionPayload }) {
+  const supabase = await createClient();
+
+  const [{ data: vendedoresRaw }, { data: clientesRaw }] = await Promise.all([
+    supabase
+      .from("usuarios")
+      .select("id, nome, ativo, concessionariaMarca:concessionaria_marcas(marca:marcas(nome))")
+      .eq("perfil", "VENDEDOR")
+      .order("nome"),
+    supabase
+      .from("clientes")
+      .select("id, nome, etapaAtual, createdAt, usuarios(nome), pedidos(id)")
+      .order("createdAt", { ascending: false }),
+  ]);
+
+  type VendedorRow = {
+    id: string;
+    nome: string;
+    ativo: boolean;
+    concessionariaMarca: { marca: { nome: string } | null } | null;
+  };
+
+  const vendedores = (vendedoresRaw ?? []) as unknown as VendedorRow[];
+  const clientes = (clientesRaw ?? []) as unknown as ClienteRow[];
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base font-normal text-muted-foreground">
+            Seja bem-vindo, {session.nome}
+          </CardTitle>
+        </CardHeader>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Vendedores</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Marca</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {vendedores.map((vendedor) => (
+                <TableRow key={vendedor.id}>
+                  <TableCell className="font-medium">{vendedor.nome}</TableCell>
+                  <TableCell>{vendedor.concessionariaMarca?.marca?.nome ?? "—"}</TableCell>
+                  <TableCell>
+                    <Badge variant={vendedor.ativo ? "default" : "secondary"}>
+                      {vendedor.ativo ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {vendedores.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center text-muted-foreground">
+                    Nenhum vendedor cadastrado.
+                  </TableCell>
+                </TableRow>
+              ) : null}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Clientes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ClientesTable clientes={clientes} detailBasePath="/clientes" />
         </CardContent>
       </Card>
     </div>

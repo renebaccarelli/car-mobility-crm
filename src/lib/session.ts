@@ -5,7 +5,7 @@ export type SessionPayload = {
   usuarioId: string;
   nome: string;
   email: string;
-  perfil: "ADMINISTRADOR" | "VENDEDOR";
+  perfil: "ADMINISTRADOR" | "VENDEDOR" | "CONCESSIONARIA";
 };
 
 export async function getSession(): Promise<SessionPayload | null> {

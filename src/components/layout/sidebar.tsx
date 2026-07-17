@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   NAV_ITEMS,
   NAV_ITEMS_ADMIN,
+  NAV_ITEMS_CONCESSIONARIA,
   DASHBOARD_ITEM,
   LEADS_ITEM,
   CLIENTES_ITEM,
@@ -53,11 +54,17 @@ function NavList({ items }: { items: typeof NAV_ITEMS }) {
   );
 }
 
-export function Sidebar({ perfil }: { perfil: "ADMINISTRADOR" | "VENDEDOR" }) {
+export function Sidebar({
+  perfil,
+}: {
+  perfil: "ADMINISTRADOR" | "VENDEDOR" | "CONCESSIONARIA";
+}) {
   const mainItems =
     perfil === "ADMINISTRADOR"
       ? [DASHBOARD_ITEM, LEADS_ITEM, VENDEDORES_ITEM, CLIENTES_ITEM, DOCUMENTOS_ITEM]
-      : NAV_ITEMS;
+      : perfil === "CONCESSIONARIA"
+        ? NAV_ITEMS_CONCESSIONARIA
+        : NAV_ITEMS;
 
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r bg-background md:flex">

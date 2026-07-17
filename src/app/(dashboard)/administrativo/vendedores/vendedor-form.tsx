@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,14 +24,49 @@ import { createVendedorAction } from "./actions";
 
 const initialState: { error?: string } = {};
 
-export function NovoVendedorDialog() {
+export type Unidade = {
+  id: string;
+  concessionariaId: string;
+  concessionariaNome: string;
+  marcaNome: string;
+};
+
+export function NovoVendedorDialog({ unidades }: { unidades: Unidade[] }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(createVendedorAction, initialState);
+  const [perfil, setPerfil] = useState<"ADMINISTRADOR" | "VENDEDOR">("VENDEDOR");
+  const [concessionariaId, setConcessionariaId] = useState("");
+  const [concessionariaMarcaId, setConcessionariaMarcaId] = useState("");
 
   useCloseDialogOnSuccess(isPending, Boolean(state.error), setOpen);
 
+  const concessionarias = useMemo(() => {
+    const vistas = new Map<string, string>();
+    for (const unidade of unidades) {
+      if (!vistas.has(unidade.concessionariaId)) {
+        vistas.set(unidade.concessionariaId, unidade.concessionariaNome);
+      }
+    }
+    return Array.from(vistas.entries()).map(([id, nome]) => ({ id, nome }));
+  }, [unidades]);
+
+  const marcasDaConcessionaria = useMemo(
+    () => unidades.filter((u) => u.concessionariaId === concessionariaId),
+    [unidades, concessionariaId]
+  );
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) {
+          setPerfil("VENDEDOR");
+          setConcessionariaId("");
+          setConcessionariaMarcaId("");
+        }
+      }}
+    >
       <DialogTrigger render={<Button>+ Vendedor</Button>} />
       <DialogContent>
         <DialogHeader>
@@ -56,7 +91,11 @@ export function NovoVendedorDialog() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="perfil">Perfil</Label>
-            <Select name="perfil" defaultValue="VENDEDOR">
+            <Select
+              name="perfil"
+              value={perfil}
+              onValueChange={(v) => setPerfil((v ?? "VENDEDOR") as "ADMINISTRADOR" | "VENDEDOR")}
+            >
               <SelectTrigger id="perfil" className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -66,6 +105,51 @@ export function NovoVendedorDialog() {
               </SelectContent>
             </Select>
           </div>
+          {perfil === "VENDEDOR" ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="concessionaria">Concessionária</Label>
+                <Select
+                  value={concessionariaId}
+                  onValueChange={(v) => {
+                    setConcessionariaId(v ?? "");
+                    setConcessionariaMarcaId("");
+                  }}
+                >
+                  <SelectTrigger id="concessionaria" className="w-full">
+                    <SelectValue placeholder="Selecione a concessionária" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {concessionarias.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="marca">Marca</Label>
+                <Select
+                  value={concessionariaMarcaId}
+                  onValueChange={(v) => setConcessionariaMarcaId(v ?? "")}
+                  disabled={!concessionariaId}
+                >
+                  <SelectTrigger id="marca" className="w-full">
+                    <SelectValue placeholder="Selecione a marca" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {marcasDaConcessionaria.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.marcaNome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <input type="hidden" name="concessionariaMarcaId" value={concessionariaMarcaId} />
+              </div>
+            </>
+          ) : null}
           {state.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending ? "Salvando..." : "Cadastrar"}

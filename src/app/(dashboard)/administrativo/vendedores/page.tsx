@@ -22,10 +22,20 @@ export default async function VendedoresPage() {
 
   const supabase = await createClient();
 
-  const [{ data: usuarios }, { data: clientes }] = await Promise.all([
-    supabase.from("usuarios").select("*").order("nome"),
+  const [{ data: usuarios }, { data: clientes }, { data: unidadesRaw }] = await Promise.all([
+    supabase.from("usuarios").select("*").in("perfil", ["ADMINISTRADOR", "VENDEDOR"]).order("nome"),
     supabase.from("clientes").select("cadastradoPorId, etapaAtual"),
+    supabase
+      .from("concessionaria_marcas")
+      .select("id, concessionariaId, concessionaria:concessionarias(nome), marca:marcas(nome)"),
   ]);
+
+  const unidades = (unidadesRaw ?? []).map((u) => ({
+    id: u.id,
+    concessionariaId: u.concessionariaId,
+    concessionariaNome: (u.concessionaria as unknown as { nome: string } | null)?.nome ?? "",
+    marcaNome: (u.marca as unknown as { nome: string } | null)?.nome ?? "",
+  }));
 
   const clientesPorVendedor = new Map<string, number>();
   const clientesPorEtapa = new Map<string, number>();
@@ -57,7 +67,7 @@ export default async function VendedoresPage() {
 
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">Vendedores</h1>
-        <NovoVendedorDialog />
+        <NovoVendedorDialog unidades={unidades} />
       </div>
 
       <div className="rounded-lg border bg-background">
@@ -87,7 +97,7 @@ export default async function VendedoresPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <EditarVendedorDialog vendedor={usuario} />
+                  <EditarVendedorDialog vendedor={usuario} unidades={unidades} />
                 </TableCell>
                 <TableCell className="text-right">
                   <VendedorAtivoToggle usuarioId={usuario.id} ativo={usuario.ativo} />
