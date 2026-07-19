@@ -11,10 +11,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { ETAPA_PROCESSO_LABELS, PERFIL_LABELS } from "@/lib/labels";
 import { NovoVendedorDialog } from "./vendedor-form";
 import { EditarVendedorDialog } from "./editar-vendedor-form";
 import { VendedorAtivoToggle } from "./toggle";
+import { deleteVendedorAction } from "./actions";
 
 export default async function VendedoresPage() {
   const session = await getSession();
@@ -97,7 +99,15 @@ export default async function VendedoresPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <EditarVendedorDialog vendedor={usuario} unidades={unidades} />
+                  <div className="flex items-center gap-2">
+                    <EditarVendedorDialog vendedor={usuario} unidades={unidades} />
+                    {usuario.id !== session.usuarioId ? (
+                      <DeleteButton
+                        action={deleteVendedorAction.bind(null, usuario.id)}
+                        confirmMessage={`Remover o usuário "${usuario.nome}"? Essa ação não pode ser desfeita.`}
+                      />
+                    ) : null}
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <VendedorAtivoToggle usuarioId={usuario.id} ativo={usuario.ativo} />

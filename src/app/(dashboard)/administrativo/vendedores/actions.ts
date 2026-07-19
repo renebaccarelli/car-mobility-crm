@@ -74,6 +74,33 @@ export async function createVendedorAction(_prevState: { error?: string }, formD
   return {};
 }
 
+export async function deleteVendedorAction(usuarioId: string) {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (session.perfil !== "ADMINISTRADOR") {
+    return { error: "Só administradores podem remover usuários." };
+  }
+  if (usuarioId === session.usuarioId) {
+    return { error: "Você não pode remover a sua própria conta." };
+  }
+
+  const adminClient = createAdminClient();
+  const { error } = await adminClient.auth.admin.deleteUser(usuarioId);
+
+  if (error) {
+    // A API de admin do Supabase Auth não repassa o código do erro do
+    // Postgres (ex: 23503 de FK restrict) de forma estruturada — na
+    // prática, a causa quase sempre é o usuário ter clientes cadastrados
+    // (clientes.cadastradoPorId é RESTRICT), então orientamos direto.
+    return {
+      error:
+        "Não foi possível remover: verifique se não há clientes cadastrados por esse usuário. Desative-o em vez de remover.",
+    };
+  }
+
+  revalidatePath("/administrativo/vendedores");
+}
+
 export async function toggleVendedorAtivoAction(usuarioId: string, ativo: boolean) {
   const supabase = await createClient();
   await supabase.from("usuarios").update({ ativo }).eq("id", usuarioId);
