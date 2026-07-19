@@ -21,7 +21,15 @@ export type ClienteRow = {
   nome: string;
   etapaAtual: keyof typeof ETAPA_PROCESSO_LABELS;
   createdAt: string;
-  usuarios: { nome: string } | null;
+  usuarios:
+    | {
+        nome: string;
+        concessionariaMarca?: {
+          concessionaria: { nome: string } | null;
+          marca: { nome: string } | null;
+        } | null;
+      }
+    | null;
   pedidos: { id: string }[];
 };
 
@@ -34,13 +42,28 @@ const PERIODOS = [
   { label: "+30 dias", value: "30" },
 ];
 
-export function PeriodoFilter({ basePath, ativo }: { basePath: string; ativo: string }) {
+export function PeriodoFilter({
+  basePath,
+  ativo,
+  extraQuery,
+}: {
+  basePath: string;
+  ativo: string;
+  extraQuery?: Record<string, string>;
+}) {
+  const buildHref = (periodoValue: string) => {
+    const params = new URLSearchParams(extraQuery);
+    if (periodoValue) params.set("periodo", periodoValue);
+    const query = params.toString();
+    return query ? `${basePath}?${query}` : basePath;
+  };
+
   return (
     <div className="flex gap-1">
       {PERIODOS.map((periodo) => (
         <Link
           key={periodo.value}
-          href={periodo.value ? `${basePath}?periodo=${periodo.value}` : basePath}
+          href={buildHref(periodo.value)}
           className={`rounded-md px-2.5 py-1 text-xs font-medium ${
             ativo === periodo.value
               ? "bg-primary text-primary-foreground"
@@ -80,7 +103,17 @@ export function ClientesTable({
                 {cliente.nome}
               </Link>
             </TableCell>
-            <TableCell>{cliente.usuarios?.nome ?? "Sem vendedor"}</TableCell>
+            <TableCell>
+              <div>{cliente.usuarios?.nome ?? "Sem vendedor"}</div>
+              {cliente.usuarios?.concessionariaMarca ? (
+                <div className="text-xs text-muted-foreground">
+                  {cliente.usuarios.concessionariaMarca.concessionaria?.nome}
+                  {cliente.usuarios.concessionariaMarca.marca?.nome
+                    ? ` · ${cliente.usuarios.concessionariaMarca.marca.nome}`
+                    : ""}
+                </div>
+              ) : null}
+            </TableCell>
             <TableCell>
               <Badge variant="outline">{ETAPA_PROCESSO_LABELS[cliente.etapaAtual]}</Badge>
             </TableCell>

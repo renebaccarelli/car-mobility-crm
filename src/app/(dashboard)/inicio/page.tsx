@@ -131,7 +131,9 @@ async function ConcessionariaDashboard({ session }: { session: SessionPayload })
       .order("nome"),
     supabase
       .from("clientes")
-      .select("id, nome, etapaAtual, createdAt, usuarios(nome), pedidos(id)")
+      .select(
+        "id, nome, etapaAtual, createdAt, usuarios(nome, concessionariaMarca:concessionaria_marcas(concessionaria:concessionarias(nome), marca:marcas(nome))), pedidos(id)"
+      )
       .order("createdAt", { ascending: false }),
   ]);
 
