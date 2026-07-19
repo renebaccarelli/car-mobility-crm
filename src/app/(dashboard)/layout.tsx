@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
+import { getAppVersion } from "@/lib/version";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 
@@ -16,7 +17,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar perfil={session.perfil} />
+      <Sidebar perfil={session.perfil} version={getAppVersion()} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar session={session} />
         <main className="flex-1 overflow-y-auto bg-muted/30 p-6">{children}</main>

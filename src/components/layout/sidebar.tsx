@@ -56,8 +56,10 @@ function NavList({ items }: { items: typeof NAV_ITEMS }) {
 
 export function Sidebar({
   perfil,
+  version,
 }: {
   perfil: "ADMINISTRADOR" | "VENDEDOR" | "CONCESSIONARIA";
+  version: string;
 }) {
   const mainItems =
     perfil === "ADMINISTRADOR"
@@ -82,6 +84,20 @@ export function Sidebar({
           </div>
         ) : null}
       </nav>
+      <div className="border-t px-5 py-2 text-[10px] text-muted-foreground/60">
+        {version === "dev" ? (
+          "dev"
+        ) : (
+          <a
+            href={`https://github.com/renebaccarelli/car-mobility-crm/commit/${version}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline"
+          >
+            v{version}
+          </a>
+        )}
+      </div>
     </aside>
   );
 }

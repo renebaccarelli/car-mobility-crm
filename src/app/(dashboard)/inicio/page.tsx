@@ -209,9 +209,10 @@ async function ConcessionariaDashboard({ session }: { session: SessionPayload })
 async function AdminDashboard({ session }: { session: SessionPayload }) {
   const supabase = await createClient();
 
-  const [{ data: servicos }, { data: pedidoItens }] = await Promise.all([
+  const [{ data: servicos }, { data: pedidoItens }, { data: clientesRaw }] = await Promise.all([
     supabase.from("servicos").select("id, nome").eq("ativo", true).order("nome"),
     supabase.from("pedido_itens").select("servicoId, statusServico"),
+    supabase.from("clientes").select("id, pedidos(id)"),
   ]);
 
   const contagemPorServico = new Map<string, number>();
@@ -221,6 +222,11 @@ async function AdminDashboard({ session }: { session: SessionPayload }) {
   }
   const totalEmAndamento = [...contagemPorServico.values()].reduce((sum, n) => sum + n, 0);
 
+  type ClienteResumo = { id: string; pedidos: { id: string }[] };
+  const listaClientes = (clientesRaw ?? []) as unknown as ClienteResumo[];
+  const totalLeads = listaClientes.filter((c) => c.pedidos.length === 0).length;
+  const totalClientesAtivos = listaClientes.filter((c) => c.pedidos.length > 0).length;
+
   return (
     <div className="space-y-6">
       <Card>
@@ -229,20 +235,48 @@ async function AdminDashboard({ session }: { session: SessionPayload }) {
             Seja bem-vindo, {session.nome}
           </CardTitle>
         </CardHeader>
+      </Card>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Link href="/leads">
+          <Card className="transition-colors hover:bg-accent">
+            <CardContent className="p-6">
+              <p className="text-sm text-muted-foreground">Leads em aberto</p>
+              <p className="mt-1 text-3xl font-semibold">{totalLeads}</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/clientes">
+          <Card className="transition-colors hover:bg-accent">
+            <CardContent className="p-6">
+              <p className="text-sm text-muted-foreground">Clientes ativos</p>
+              <p className="mt-1 text-3xl font-semibold">{totalClientesAtivos}</p>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Serviços em andamento</CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {(servicos ?? []).map((servico) => {
               const count = contagemPorServico.get(servico.id) ?? 0;
               const percentual = totalEmAndamento > 0 ? (count / totalEmAndamento) * 100 : 0;
               return (
-                <div key={servico.id} className="rounded-lg bg-primary/95 p-4 text-primary-foreground">
-                  <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
+                <div key={servico.id} className="rounded-lg border bg-background p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {servico.nome}
                   </p>
                   <p className="mt-2 text-2xl font-semibold">
-                    {count} <span className="text-xs font-normal opacity-80">serviços</span>
+                    {count} <span className="text-xs font-normal text-muted-foreground">serviços</span>
                   </p>
-                  <p className="text-xs opacity-70">{percentual.toFixed(2)} %</p>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary" style={{ width: `${percentual}%` }} />
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">{percentual.toFixed(2)} %</p>
                 </div>
               );
             })}
