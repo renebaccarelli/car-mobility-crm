@@ -39,7 +39,9 @@ export function TarefaStatusSelect({
       }
     >
       <SelectTrigger size="sm" className="w-36">
-        <SelectValue />
+        <SelectValue>
+          {(value: StatusTarefa) => OPCOES.find((opcao) => opcao.value === value)?.label ?? value}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {OPCOES.map((opcao) => (

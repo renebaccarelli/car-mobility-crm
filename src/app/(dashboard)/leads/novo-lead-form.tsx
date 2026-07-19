@@ -66,7 +66,7 @@ export function NovoLeadDialog() {
             <Label htmlFor="condutor">Condutor?</Label>
             <Select name="condutor" defaultValue="nao">
               <SelectTrigger id="condutor" className="w-full">
-                <SelectValue />
+                <SelectValue>{(value: string) => (value === "sim" ? "Sim" : "Não")}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="sim">Sim</SelectItem>
@@ -79,7 +79,9 @@ export function NovoLeadDialog() {
             <Label htmlFor="preferenciaContato">Preferência de contato</Label>
             <Select name="preferenciaContato" defaultValue="TELEFONE">
               <SelectTrigger id="preferenciaContato" className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  {(value: string) => (value === "WHATSAPP" ? "WhatsApp" : "Telefone")}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="TELEFONE">Telefone</SelectItem>

@@ -97,7 +97,9 @@ export function NovoVendedorDialog({ unidades }: { unidades: Unidade[] }) {
               onValueChange={(v) => setPerfil((v ?? "VENDEDOR") as "ADMINISTRADOR" | "VENDEDOR")}
             >
               <SelectTrigger id="perfil" className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  {(value: string) => (value === "ADMINISTRADOR" ? "Administrador" : "Vendedor")}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="VENDEDOR">Vendedor</SelectItem>
@@ -117,7 +119,11 @@ export function NovoVendedorDialog({ unidades }: { unidades: Unidade[] }) {
                   }}
                 >
                   <SelectTrigger id="concessionaria" className="w-full">
-                    <SelectValue placeholder="Selecione a concessionária" />
+                    <SelectValue placeholder="Selecione a concessionária">
+                      {(value: string) =>
+                        concessionarias.find((c) => c.id === value)?.nome ?? "Selecione a concessionária"
+                      }
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {concessionarias.map((c) => (
@@ -136,7 +142,11 @@ export function NovoVendedorDialog({ unidades }: { unidades: Unidade[] }) {
                   disabled={!concessionariaId}
                 >
                   <SelectTrigger id="marca" className="w-full">
-                    <SelectValue placeholder="Selecione a marca" />
+                    <SelectValue placeholder="Selecione a marca">
+                      {(value: string) =>
+                        marcasDaConcessionaria.find((u) => u.id === value)?.marcaNome ?? "Selecione a marca"
+                      }
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {marcasDaConcessionaria.map((u) => (

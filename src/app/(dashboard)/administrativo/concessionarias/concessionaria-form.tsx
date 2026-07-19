@@ -63,7 +63,9 @@ export function NovaConcessionariaDialog({ marcas }: { marcas: Marca[] }) {
               onValueChange={(v) => setTipoLogin((v ?? "EMAIL") as "EMAIL" | "USUARIO")}
             >
               <SelectTrigger id="tipoLogin" className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  {(value: string) => (value === "USUARIO" ? "Usuário" : "E-mail")}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="EMAIL">E-mail</SelectItem>

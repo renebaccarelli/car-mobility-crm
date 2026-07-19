@@ -112,7 +112,7 @@ export function EditarClienteDialog({ cliente }: { cliente: ClienteEditavel }) {
               <Label htmlFor="condutor">Condutor?</Label>
               <Select name="condutor" value={condutor} onValueChange={(v) => setCondutor(v ?? "nao")}>
                 <SelectTrigger id="condutor" className="w-full">
-                  <SelectValue />
+                  <SelectValue>{(value: string) => (value === "sim" ? "Sim" : "Não")}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="sim">Sim</SelectItem>
@@ -128,7 +128,9 @@ export function EditarClienteDialog({ cliente }: { cliente: ClienteEditavel }) {
                 onValueChange={(v) => setDeficienciaMembrosInferiores(v ?? "")}
               >
                 <SelectTrigger id="deficienciaMembrosInferiores" className="w-full">
-                  <SelectValue placeholder="Não informado" />
+                  <SelectValue placeholder="Não informado">
+                    {(value: string) => (value === "sim" ? "Sim" : value === "nao" ? "Não" : "Não informado")}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Não informado</SelectItem>
@@ -146,7 +148,9 @@ export function EditarClienteDialog({ cliente }: { cliente: ClienteEditavel }) {
               onValueChange={(v) => setPreferenciaContato(v ?? "TELEFONE")}
             >
               <SelectTrigger id="preferenciaContato" className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  {(value: string) => (value === "WHATSAPP" ? "WhatsApp" : "Telefone")}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="TELEFONE">Telefone</SelectItem>

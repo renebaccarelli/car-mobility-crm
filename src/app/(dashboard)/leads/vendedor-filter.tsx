@@ -18,6 +18,12 @@ export type VendedorOption = {
 
 const TODOS = "TODOS";
 
+function formatVendedorLabel(vendedor: VendedorOption) {
+  return vendedor.concessionariaNome
+    ? `${vendedor.nome} — ${vendedor.concessionariaNome}${vendedor.marcaNome ? ` · ${vendedor.marcaNome}` : ""}`
+    : vendedor.nome;
+}
+
 export function VendedorFilter({
   vendedores,
   basePath,
@@ -28,6 +34,11 @@ export function VendedorFilter({
   const router = useRouter();
   const searchParams = useSearchParams();
   const vendedorId = searchParams.get("vendedorId") ?? TODOS;
+
+  const rotulos: Record<string, string> = { [TODOS]: "Todos os vendedores" };
+  for (const vendedor of vendedores) {
+    rotulos[vendedor.id] = formatVendedorLabel(vendedor);
+  }
 
   return (
     <Select
@@ -44,16 +55,15 @@ export function VendedorFilter({
       }}
     >
       <SelectTrigger className="w-[240px]">
-        <SelectValue placeholder="Todos os vendedores" />
+        <SelectValue placeholder="Todos os vendedores">
+          {(value: string) => rotulos[value] ?? "Todos os vendedores"}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value={TODOS}>Todos os vendedores</SelectItem>
         {vendedores.map((vendedor) => (
           <SelectItem key={vendedor.id} value={vendedor.id}>
-            {vendedor.nome}
-            {vendedor.concessionariaNome
-              ? ` — ${vendedor.concessionariaNome}${vendedor.marcaNome ? ` · ${vendedor.marcaNome}` : ""}`
-              : ""}
+            {formatVendedorLabel(vendedor)}
           </SelectItem>
         ))}
       </SelectContent>

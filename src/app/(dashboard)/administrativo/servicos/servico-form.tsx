@@ -48,7 +48,11 @@ export function NovoServicoDialog() {
             <Label htmlFor="categoria">Categoria</Label>
             <Select name="categoria" defaultValue="RECOMENDADOS">
               <SelectTrigger id="categoria" className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  {(value: string) =>
+                    CATEGORIA_SERVICO_LABELS[value as keyof typeof CATEGORIA_SERVICO_LABELS]
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(CATEGORIA_SERVICO_LABELS).map(([value, label]) => (
