@@ -237,20 +237,20 @@ async function AdminDashboard({ session }: { session: SessionPayload }) {
         </CardHeader>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         <Link href="/leads">
           <Card className="transition-colors hover:bg-accent">
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground">Leads em aberto</p>
-              <p className="mt-1 text-3xl font-semibold">{totalLeads}</p>
+            <CardContent className="p-3">
+              <p className="text-xs text-muted-foreground">Leads em aberto</p>
+              <p className="mt-0.5 text-xl font-semibold">{totalLeads}</p>
             </CardContent>
           </Card>
         </Link>
         <Link href="/clientes">
           <Card className="transition-colors hover:bg-accent">
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground">Clientes ativos</p>
-              <p className="mt-1 text-3xl font-semibold">{totalClientesAtivos}</p>
+            <CardContent className="p-3">
+              <p className="text-xs text-muted-foreground">Clientes ativos</p>
+              <p className="mt-0.5 text-xl font-semibold">{totalClientesAtivos}</p>
             </CardContent>
           </Card>
         </Link>
@@ -261,22 +261,22 @@ async function AdminDashboard({ session }: { session: SessionPayload }) {
           <CardTitle className="text-base">Serviços em andamento</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
             {(servicos ?? []).map((servico) => {
               const count = contagemPorServico.get(servico.id) ?? 0;
               const percentual = totalEmAndamento > 0 ? (count / totalEmAndamento) * 100 : 0;
               return (
-                <div key={servico.id} className="rounded-lg border bg-background p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <div key={servico.id} className="rounded-lg border bg-background p-2.5">
+                  <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                     {servico.nome}
                   </p>
-                  <p className="mt-2 text-2xl font-semibold">
-                    {count} <span className="text-xs font-normal text-muted-foreground">serviços</span>
+                  <p className="mt-1 text-lg font-semibold">
+                    {count} <span className="text-[10px] font-normal text-muted-foreground">serviços</span>
                   </p>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
                     <div className="h-full rounded-full bg-primary" style={{ width: `${percentual}%` }} />
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{percentual.toFixed(2)} %</p>
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">{percentual.toFixed(2)} %</p>
                 </div>
               );
             })}
