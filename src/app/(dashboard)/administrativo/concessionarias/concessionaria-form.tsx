@@ -7,6 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PhoneInput } from "@/components/ui/phone-input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -24,6 +31,7 @@ export function NovaConcessionariaDialog({ marcas }: { marcas: Marca[] }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(createConcessionariaAction, initialState);
   const [buscaMarca, setBuscaMarca] = useState("");
+  const [tipoLogin, setTipoLogin] = useState<"EMAIL" | "USUARIO">("EMAIL");
 
   useCloseDialogOnSuccess(isPending, Boolean(state.error), setOpen);
 
@@ -48,9 +56,35 @@ export function NovaConcessionariaDialog({ marcas }: { marcas: Marca[] }) {
             <PhoneInput id="telefone" name="telefone" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail de acesso</Label>
-            <Input id="email" name="email" type="email" required />
+            <Label htmlFor="tipoLogin">Login por</Label>
+            <Select
+              name="tipoLogin"
+              value={tipoLogin}
+              onValueChange={(v) => setTipoLogin((v ?? "EMAIL") as "EMAIL" | "USUARIO")}
+            >
+              <SelectTrigger id="tipoLogin" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="EMAIL">E-mail</SelectItem>
+                <SelectItem value="USUARIO">Usuário</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          {tipoLogin === "EMAIL" ? (
+            <div className="space-y-2">
+              <Label htmlFor="email">E-mail de acesso</Label>
+              <Input id="email" name="email" type="email" required />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="username">Usuário de acesso</Label>
+              <Input id="username" name="username" required />
+              <p className="text-xs text-muted-foreground">
+                O gerente entra com esse nome de usuário, sem precisar de e-mail.
+              </p>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="senha">Senha</Label>
             <Input id="senha" name="senha" type="password" minLength={6} required />

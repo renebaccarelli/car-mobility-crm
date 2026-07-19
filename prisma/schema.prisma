@@ -27,6 +27,7 @@ model Usuario {
   id        String     @id @db.Uuid
   nome      String
   email     String     @unique
+  username  String?    @unique
   telefone  String?
   perfil    TipoPerfil @default(VENDEDOR)
   ativo     Boolean    @default(true)

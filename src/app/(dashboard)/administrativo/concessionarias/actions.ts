@@ -7,13 +7,29 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/session";
 
-const concessionariaSchema = z.object({
-  nome: z.string().min(2, "Informe o nome"),
-  telefone: z.string().min(8, "Informe um telefone válido"),
-  email: z.string().email("E-mail inválido"),
-  senha: z.string().min(6, "A senha precisa ter ao menos 6 caracteres"),
-  marcaIds: z.array(z.string().min(1)).min(1, "Selecione ao menos uma marca"),
-});
+const usernameRegex = /^[a-z0-9](?:[a-z0-9._-]{1,30}[a-z0-9])?$/i;
+
+const concessionariaSchema = z
+  .object({
+    nome: z.string().min(2, "Informe o nome"),
+    telefone: z.string().min(8, "Informe um telefone válido"),
+    tipoLogin: z.enum(["EMAIL", "USUARIO"]),
+    email: z.string().optional(),
+    username: z.string().optional(),
+    senha: z.string().min(6, "A senha precisa ter ao menos 6 caracteres"),
+    marcaIds: z.array(z.string().min(1)).min(1, "Selecione ao menos uma marca"),
+  })
+  .refine(
+    (data) => data.tipoLogin !== "EMAIL" || z.string().email().safeParse(data.email).success,
+    { message: "E-mail inválido", path: ["email"] }
+  )
+  .refine(
+    (data) => data.tipoLogin !== "USUARIO" || (data.username ? usernameRegex.test(data.username) : false),
+    {
+      message: "Usuário inválido (use letras, números, ponto, hífen ou underline)",
+      path: ["username"],
+    }
+  );
 
 export async function createConcessionariaAction(
   _prevState: { error?: string },
@@ -28,7 +44,9 @@ export async function createConcessionariaAction(
   const parsed = concessionariaSchema.safeParse({
     nome: formData.get("nome"),
     telefone: formData.get("telefone"),
-    email: formData.get("email"),
+    tipoLogin: formData.get("tipoLogin"),
+    email: formData.get("email") || undefined,
+    username: formData.get("username") || undefined,
     senha: formData.get("senha"),
     marcaIds: formData.getAll("marcaIds"),
   });
@@ -37,7 +55,8 @@ export async function createConcessionariaAction(
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
-  const { nome, telefone, email, senha, marcaIds } = parsed.data;
+  const { nome, telefone, tipoLogin, email, username, senha, marcaIds } = parsed.data;
+  const usernameNormalizado = username?.trim().toLowerCase();
   const supabase = await createClient();
 
   const { data: concessionaria, error: concessionariaError } = await supabase
@@ -61,12 +80,17 @@ export async function createConcessionariaAction(
     return { error: "Não foi possível associar as marcas selecionadas." };
   }
 
+  // Login por usuário: não existe e-mail real, então usamos um e-mail
+  // sintético interno só pra satisfazer o Supabase Auth. A resolução
+  // usuário -> e-mail acontece no login (src/app/(auth)/login/actions.ts).
+  const loginEmail = tipoLogin === "EMAIL" ? email! : `${usernameNormalizado}@concessionaria.local`;
+
   const adminClient = createAdminClient();
   // O trigger handle_new_user só cria a linha em usuarios quando tipo=vendedor;
   // criamos assim e depois trocamos o perfil para CONCESSIONARIA (mesmo truque
   // usado em createVendedorAction para criar um ADMINISTRADOR).
   const { data: created, error: authError } = await adminClient.auth.admin.createUser({
-    email,
+    email: loginEmail,
     password: senha,
     email_confirm: true,
     user_metadata: { nome, telefone, tipo: "vendedor" },
@@ -74,14 +98,23 @@ export async function createConcessionariaAction(
 
   if (authError || !created.user) {
     if (authError?.code === "email_exists") {
-      return { error: "Já existe uma conta com esse e-mail." };
+      return {
+        error:
+          tipoLogin === "USUARIO"
+            ? "Esse nome de usuário já está em uso."
+            : "Já existe uma conta com esse e-mail.",
+      };
     }
     return { error: "Não foi possível criar o login da concessionária." };
   }
 
   const { data: updated, error: updateError } = await adminClient
     .from("usuarios")
-    .update({ perfil: "CONCESSIONARIA", concessionariaId: concessionaria.id })
+    .update({
+      perfil: "CONCESSIONARIA",
+      concessionariaId: concessionaria.id,
+      username: tipoLogin === "USUARIO" ? usernameNormalizado : null,
+    })
     .eq("id", created.user.id)
     .select("id");
 
