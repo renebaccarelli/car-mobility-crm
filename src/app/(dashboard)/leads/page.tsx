@@ -37,7 +37,7 @@ export default async function LeadsPage({
       .select(
         "id, nome, concessionariaMarca:concessionaria_marcas(concessionaria:concessionarias(nome), marca:marcas(nome))"
       )
-      .in("perfil", ["ADMINISTRADOR", "VENDEDOR"])
+      .eq("perfil", "VENDEDOR")
       .eq("ativo", true)
       .order("nome"),
   ]);
