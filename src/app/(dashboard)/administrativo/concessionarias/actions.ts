@@ -131,3 +131,98 @@ export async function toggleConcessionariaAtivoAction(concessionariaId: string, 
   await supabase.from("concessionarias").update({ ativo }).eq("id", concessionariaId);
   revalidatePath("/administrativo/concessionarias");
 }
+
+const editarConcessionariaSchema = z.object({
+  concessionariaId: z.string().min(1),
+  nome: z.string().min(2, "Informe o nome"),
+  telefone: z.string().min(8, "Informe um telefone válido"),
+  marcaIds: z.array(z.string().min(1)).min(1, "Selecione ao menos uma marca"),
+});
+
+export async function updateConcessionariaAction(
+  _prevState: { error?: string },
+  formData: FormData
+) {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (session.perfil !== "ADMINISTRADOR") {
+    return { error: "Só administradores podem editar concessionárias." };
+  }
+
+  const parsed = editarConcessionariaSchema.safeParse({
+    concessionariaId: formData.get("concessionariaId"),
+    nome: formData.get("nome"),
+    telefone: formData.get("telefone"),
+    marcaIds: formData.getAll("marcaIds"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
+  }
+
+  const { concessionariaId, nome, telefone, marcaIds } = parsed.data;
+  const supabase = await createClient();
+
+  const { error: updateError } = await supabase
+    .from("concessionarias")
+    .update({ nome, telefone })
+    .eq("id", concessionariaId);
+
+  if (updateError) {
+    return { error: "Não foi possível atualizar a concessionária." };
+  }
+
+  const { data: unidadesAtuais } = await supabase
+    .from("concessionaria_marcas")
+    .select("id, marcaId")
+    .eq("concessionariaId", concessionariaId);
+
+  const marcaIdsAtuais = new Set((unidadesAtuais ?? []).map((u) => u.marcaId));
+  const marcaIdsNovos = new Set(marcaIds);
+
+  const paraAdicionar = marcaIds.filter((marcaId) => !marcaIdsAtuais.has(marcaId));
+  const paraRemover = (unidadesAtuais ?? []).filter((u) => !marcaIdsNovos.has(u.marcaId));
+
+  if (paraAdicionar.length > 0) {
+    const { error } = await supabase.from("concessionaria_marcas").insert(
+      paraAdicionar.map((marcaId) => ({ concessionariaId, marcaId }))
+    );
+    if (error) {
+      return { error: "Não foi possível associar as novas marcas selecionadas." };
+    }
+  }
+
+  if (paraRemover.length > 0) {
+    const { error } = await supabase
+      .from("concessionaria_marcas")
+      .delete()
+      .in("id", paraRemover.map((u) => u.id));
+    if (error) {
+      return { error: "Não foi possível remover as marcas desmarcadas." };
+    }
+  }
+
+  revalidatePath("/administrativo/concessionarias");
+  return {};
+}
+
+export async function deleteConcessionariaAction(concessionariaId: string) {
+  const adminClient = createAdminClient();
+
+  const { data: logins } = await adminClient
+    .from("usuarios")
+    .select("id")
+    .eq("concessionariaId", concessionariaId);
+
+  for (const login of logins ?? []) {
+    await adminClient.auth.admin.deleteUser(login.id);
+  }
+
+  const { error } = await adminClient.from("concessionarias").delete().eq("id", concessionariaId);
+
+  if (error) {
+    return { error: "Não foi possível remover a concessionária." };
+  }
+
+  revalidatePath("/administrativo/concessionarias");
+}

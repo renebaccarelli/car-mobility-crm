@@ -10,8 +10,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { NovaConcessionariaDialog } from "./concessionaria-form";
+import { EditarConcessionariaDialog } from "./editar-concessionaria-form";
 import { ConcessionariaAtivoToggle } from "./toggle";
+import { deleteConcessionariaAction } from "./actions";
 
 export default async function ConcessionariasPage() {
   const session = await getSession();
@@ -22,20 +25,25 @@ export default async function ConcessionariasPage() {
   const [{ data: concessionarias }, { data: unidades }, { data: marcas }, { data: vendedores }] =
     await Promise.all([
       supabase.from("concessionarias").select("*").order("nome"),
-      supabase.from("concessionaria_marcas").select("id, concessionariaId, marca:marcas(nome)"),
+      supabase.from("concessionaria_marcas").select("id, concessionariaId, marcaId, marca:marcas(nome)"),
       supabase.from("marcas").select("id, nome").eq("ativo", true).order("nome"),
       supabase.from("usuarios").select("concessionariaMarcaId").eq("perfil", "VENDEDOR"),
     ]);
 
   const marcasPorConcessionaria = new Map<string, string[]>();
+  const marcaIdsPorConcessionaria = new Map<string, string[]>();
   const concessionariaPorUnidade = new Map<string, string>();
   for (const unidade of unidades ?? []) {
     concessionariaPorUnidade.set(unidade.id, unidade.concessionariaId);
     const nomeMarca = (unidade.marca as unknown as { nome: string } | null)?.nome;
-    if (!nomeMarca) continue;
-    const lista = marcasPorConcessionaria.get(unidade.concessionariaId) ?? [];
-    lista.push(nomeMarca);
-    marcasPorConcessionaria.set(unidade.concessionariaId, lista);
+    if (nomeMarca) {
+      const lista = marcasPorConcessionaria.get(unidade.concessionariaId) ?? [];
+      lista.push(nomeMarca);
+      marcasPorConcessionaria.set(unidade.concessionariaId, lista);
+    }
+    const idsLista = marcaIdsPorConcessionaria.get(unidade.concessionariaId) ?? [];
+    idsLista.push(unidade.marcaId);
+    marcaIdsPorConcessionaria.set(unidade.concessionariaId, idsLista);
   }
 
   const vendedoresPorConcessionaria = new Map<string, number>();
@@ -64,6 +72,7 @@ export default async function ConcessionariasPage() {
               <TableHead>Marcas</TableHead>
               <TableHead>Vendedores</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead></TableHead>
               <TableHead className="text-right">Ativo</TableHead>
             </TableRow>
           </TableHeader>
@@ -85,6 +94,19 @@ export default async function ConcessionariasPage() {
                     {concessionaria.ativo ? "Ativo" : "Inativo"}
                   </Badge>
                 </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <EditarConcessionariaDialog
+                      concessionaria={concessionaria}
+                      marcas={marcas ?? []}
+                      marcaIdsAtuais={marcaIdsPorConcessionaria.get(concessionaria.id) ?? []}
+                    />
+                    <DeleteButton
+                      action={deleteConcessionariaAction.bind(null, concessionaria.id)}
+                      confirmMessage={`Remover a concessionária "${concessionaria.nome}"? O login de acesso dela também será removido. Essa ação não pode ser desfeita.`}
+                    />
+                  </div>
+                </TableCell>
                 <TableCell className="text-right">
                   <ConcessionariaAtivoToggle
                     concessionariaId={concessionaria.id}
@@ -95,7 +117,7 @@ export default async function ConcessionariasPage() {
             ))}
             {(concessionarias ?? []).length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
                   Nenhuma concessionária cadastrada.
                 </TableCell>
               </TableRow>

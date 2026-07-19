@@ -10,9 +10,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { CATEGORIA_SERVICO_LABELS } from "@/lib/labels";
 import { NovoServicoDialog } from "./servico-form";
+import { EditarServicoDialog } from "./editar-servico-form";
 import { ServicoAtivoToggle } from "./toggle";
+import { deleteServicoAction } from "./actions";
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -40,6 +43,7 @@ export default async function ServicosPage() {
               <TableHead>Categoria</TableHead>
               <TableHead>Valor</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead></TableHead>
               <TableHead className="text-right">Ativo</TableHead>
             </TableRow>
           </TableHeader>
@@ -59,6 +63,15 @@ export default async function ServicosPage() {
                   <Badge variant={servico.ativo ? "default" : "secondary"}>
                     {servico.ativo ? "Ativo" : "Inativo"}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <EditarServicoDialog servico={servico} />
+                    <DeleteButton
+                      action={deleteServicoAction.bind(null, servico.id)}
+                      confirmMessage={`Remover o serviço "${servico.nome}"? Essa ação não pode ser desfeita.`}
+                    />
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <ServicoAtivoToggle servicoId={servico.id} ativo={servico.ativo} />
