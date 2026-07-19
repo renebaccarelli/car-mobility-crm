@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import {
   Select,
   SelectContent,
@@ -69,15 +70,7 @@ export function EditarServicoDialog({ servico }: { servico: ServicoEditavel }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="valorPadrao">Valor do serviço</Label>
-            <Input
-              id="valorPadrao"
-              name="valorPadrao"
-              type="number"
-              step="0.01"
-              min="0"
-              defaultValue={String(servico.valorPadrao)}
-              required
-            />
+            <CurrencyInput id="valorPadrao" name="valorPadrao" defaultValue={servico.valorPadrao} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="descricao">Descrição</Label>
